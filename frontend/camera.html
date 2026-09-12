@@ -1,0 +1,1519 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Gujarat Police Camera Dashboard</title>
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            background: #0b0f14;
+            color: #e5e7eb;
+        }
+
+        header {
+            height: 70px;
+            background: #111827;
+            border-bottom: 1px solid #263241;
+
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+
+            padding: 0 25px;
+        }
+
+        .logo-section h1 {
+            font-size: 22px;
+            color: white;
+        }
+
+        .logo-section p {
+            font-size: 12px;
+            color: #9ca3af;
+            margin-top: 4px;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        button {
+            border: none;
+            padding: 10px 16px;
+            border-radius: 7px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        button:hover {
+            opacity: 0.85;
+        }
+
+        .start-all {
+            background: #16a34a;
+            color: white;
+        }
+
+        .stop-all {
+            background: #dc2626;
+            color: white;
+        }
+
+        .top-section {
+            padding: 20px 25px 10px;
+        }
+
+        .stats {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .stat {
+            background: #111827;
+            border: 1px solid #263241;
+            border-radius: 10px;
+            padding: 15px 25px;
+            min-width: 140px;
+        }
+
+        .stat-title {
+            font-size: 12px;
+            color: #9ca3af;
+        }
+
+        .stat-value {
+            font-size: 25px;
+            font-weight: bold;
+            margin-top: 5px;
+        }
+
+        .legend {
+            margin-top: 20px;
+
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .vendor-legend {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+
+            background: #111827;
+            padding: 7px 12px;
+
+            border-radius: 20px;
+
+            font-size: 13px;
+        }
+
+        .vendor-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+
+        .camera-grid {
+            padding: 20px 25px 40px;
+
+            display: grid;
+
+            grid-template-columns:
+                repeat(auto-fill, minmax(360px, 1fr));
+
+            gap: 18px;
+        }
+
+        .camera-card {
+            background: #111827;
+
+            border-radius: 12px;
+
+            overflow: hidden;
+
+            border: 2px solid;
+
+            transition: 0.2s;
+        }
+
+        .camera-card:hover {
+            transform: translateY(-2px);
+        }
+
+        .camera-header {
+            height: 55px;
+
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+
+            padding: 0 14px;
+        }
+
+        .camera-name {
+            font-weight: bold;
+            font-size: 15px;
+        }
+
+        .camera-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .vendor-badge {
+            padding: 5px 9px;
+
+            border-radius: 5px;
+
+            font-size: 11px;
+            font-weight: bold;
+
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .status {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+
+            font-size: 11px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        .online {
+            background: #22c55e;
+        }
+
+        .offline {
+            background: #ef4444;
+        }
+
+        .starting {
+            background: #f59e0b;
+        }
+
+        .video-container {
+            width: 100%;
+            height: 220px;
+
+            background: #05070a;
+
+            position: relative;
+        }
+
+        iframe {
+            width: 100%;
+            height: 100%;
+
+            border: none;
+
+            display: none;
+        }
+
+        .offline-screen {
+            width: 100%;
+            height: 100%;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            flex-direction: column;
+
+            color: #6b7280;
+        }
+
+        .offline-screen .icon {
+            font-size: 35px;
+            margin-bottom: 10px;
+        }
+
+        .camera-footer {
+            padding: 12px;
+
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+
+            border-top: 1px solid #263241;
+        }
+
+        .camera-id {
+            font-size: 11px;
+            color: #6b7280;
+        }
+
+        .camera-actions {
+            display: flex;
+            gap: 7px;
+        }
+
+        .start-btn {
+            background: #166534;
+            color: white;
+            font-size: 11px;
+            padding: 7px 11px;
+        }
+
+        .stop-btn {
+            background: #991b1b;
+            color: white;
+            font-size: 11px;
+            padding: 7px 11px;
+        }
+
+        .loading {
+            padding: 50px;
+
+            text-align: center;
+
+            color: #9ca3af;
+
+            font-size: 15px;
+        }
+
+        .error {
+            margin: 25px;
+
+            padding: 15px;
+
+            border-radius: 8px;
+
+            background: #3f1515;
+
+            border: 1px solid #7f1d1d;
+
+            color: #fca5a5;
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+<header>
+
+    <div class="logo-section">
+
+        <h1>
+            Gujarat Police Camera System
+        </h1>
+
+        <p>
+            Multi-camera surveillance dashboard
+        </p>
+
+    </div>
+
+
+    <div class="header-actions">
+
+        <button
+            class="start-all"
+            onclick="startAllCameras()">
+
+            ▶ Start All
+
+        </button>
+
+
+        <button
+            class="stop-all"
+            onclick="stopAllCameras()">
+
+            ■ Stop All
+
+        </button>
+
+    </div>
+
+</header>
+
+
+
+<section class="top-section">
+
+
+    <div class="stats">
+
+
+        <div class="stat">
+
+            <div class="stat-title">
+                TOTAL CAMERAS
+            </div>
+
+            <div
+                class="stat-value"
+                id="totalCameras">
+
+                0
+
+            </div>
+
+        </div>
+
+
+
+        <div class="stat">
+
+            <div class="stat-title">
+                STREAMING
+            </div>
+
+            <div
+                class="stat-value"
+                id="streamingCameras">
+
+                0
+
+            </div>
+
+        </div>
+
+
+
+        <div class="stat">
+
+            <div class="stat-title">
+                OFFLINE
+            </div>
+
+            <div
+                class="stat-value"
+                id="offlineCameras">
+
+                0
+
+            </div>
+
+        </div>
+
+
+
+        <div class="stat">
+
+            <div class="stat-title">
+                VENDORS
+            </div>
+
+            <div
+                class="stat-value"
+                id="totalVendors">
+
+                0
+
+            </div>
+
+        </div>
+
+
+    </div>
+
+
+    <div
+        class="legend"
+        id="vendorLegend">
+
+    </div>
+
+
+</section>
+
+
+
+<main
+    class="camera-grid"
+    id="cameraGrid">
+
+    <div class="loading">
+
+        Loading cameras...
+
+    </div>
+
+</main>
+
+
+
+<script>
+
+
+/* =====================================================
+   API CONFIGURATION
+===================================================== */
+
+
+const API_URL =
+    "http://127.0.0.1:8000";
+
+
+const MEDIAMTX_URL =
+    "http://127.0.0.1:9997";
+
+
+
+/* =====================================================
+   VENDOR COLORS
+===================================================== */
+
+
+const vendorColors = [
+
+    "#3b82f6",
+
+    "#22c55e",
+
+    "#f59e0b",
+
+    "#a855f7",
+
+    "#ef4444",
+
+    "#06b6d4",
+
+    "#ec4899",
+
+    "#84cc16",
+
+    "#f97316",
+
+    "#14b8a6"
+
+];
+
+
+const vendorColorMap = {};
+
+
+
+/* =====================================================
+   CAMERA STORAGE
+===================================================== */
+
+
+let cameras = [];
+
+
+
+/* =====================================================
+   GET VENDOR COLOR
+===================================================== */
+
+
+function getVendorColor(vendorId) {
+
+    if (!vendorColorMap[vendorId]) {
+
+        const usedColors =
+            Object.keys(vendorColorMap).length;
+
+        vendorColorMap[vendorId] =
+            vendorColors[
+                usedColors % vendorColors.length
+            ];
+
+    }
+
+    return vendorColorMap[vendorId];
+
+}
+
+
+
+/* =====================================================
+   LOAD ALL CAMERAS
+===================================================== */
+
+
+async function loadAllCameras() {
+
+    try {
+
+        cameras = [];
+
+
+        /*
+         * Your vendor API is:
+         *
+         * POST /api/vendors/vendor/{status}
+         *
+         * So we use true here.
+         */
+
+
+        const vendorResponse =
+            await fetch(
+                `${API_URL}/api/vendors/vendor/true`,
+                {
+                    method: "POST"
+                }
+            );
+
+
+        if (!vendorResponse.ok) {
+
+            throw new Error(
+                "Failed to load vendors"
+            );
+
+        }
+
+
+        const vendorList =
+            await vendorResponse.json();
+
+
+        /*
+         * Current vendor API returns
+         * vendor names.
+         *
+         * Vendor IDs are currently
+         * checked sequentially.
+         */
+
+
+        for (
+            let vendorId = 1;
+            vendorId <= vendorList.length;
+            vendorId++
+        ) {
+
+
+            try {
+
+
+                /*
+                 * Your vendor.py endpoint:
+                 *
+                 * POST
+                 * /api/vendors/vendor/{vendorID}/cameras
+                 */
+
+
+                const response =
+                    await fetch(
+                        `${API_URL}/api/vendors/vendor/${vendorId}/cameras`,
+                        {
+                            method: "POST"
+                        }
+                    );
+
+
+                if (!response.ok) {
+
+                    continue;
+
+                }
+
+
+                const data =
+                    await response.json();
+
+
+                if (
+                    !data.cameras ||
+                    data.cameras.length === 0
+                ) {
+
+                    continue;
+
+                }
+
+
+                const vendorName =
+                    vendorList[vendorId - 1];
+
+
+                for (
+                    const camera of data.cameras
+                ) {
+
+
+                    cameras.push({
+
+                        CameraID:
+                            camera.CameraID,
+
+                        CameraName:
+                            camera.CameraName,
+
+                        VendorID:
+                            vendorId,
+
+                        VendorName:
+                            vendorName,
+
+                        status:
+                            "OFFLINE",
+
+                        streamName:
+                            null
+
+                    });
+
+                }
+
+
+            }
+            catch (error) {
+
+                console.log(
+                    `Vendor ${vendorId} failed`,
+                    error
+                );
+
+            }
+
+        }
+
+
+        renderVendorLegend();
+
+        renderCameras();
+
+        updateStats();
+
+
+    }
+    catch (error) {
+
+
+        console.error(error);
+
+
+        document.getElementById(
+            "cameraGrid"
+        ).innerHTML = `
+
+            <div class="error">
+
+                Failed to load cameras.
+
+                <br><br>
+
+                Make sure FastAPI is running at:
+
+                <br>
+
+                http://127.0.0.1:8000
+
+            </div>
+
+        `;
+
+    }
+
+}
+
+
+
+/* =====================================================
+   VENDOR LEGEND
+===================================================== */
+
+
+function renderVendorLegend() {
+
+
+    const legend =
+        document.getElementById(
+            "vendorLegend"
+        );
+
+
+    const vendors = [];
+
+
+    cameras.forEach(camera => {
+
+
+        const exists =
+            vendors.find(
+                v =>
+                    v.id === camera.VendorID
+            );
+
+
+        if (!exists) {
+
+            vendors.push({
+
+                id:
+                    camera.VendorID,
+
+                name:
+                    camera.VendorName
+
+            });
+
+        }
+
+    });
+
+
+    legend.innerHTML = "";
+
+
+    vendors.forEach(vendor => {
+
+
+        const color =
+            getVendorColor(
+                vendor.id
+            );
+
+
+        const item =
+            document.createElement(
+                "div"
+            );
+
+
+        item.className =
+            "vendor-legend";
+
+
+        item.innerHTML = `
+
+            <span
+                class="vendor-dot"
+                style="background:${color}">
+            </span>
+
+            ${vendor.name}
+
+        `;
+
+
+        legend.appendChild(item);
+
+    });
+
+
+    document.getElementById(
+        "totalVendors"
+    ).textContent =
+        vendors.length;
+
+}
+
+
+
+/* =====================================================
+   RENDER CAMERAS
+===================================================== */
+
+
+function renderCameras() {
+
+
+    const grid =
+        document.getElementById(
+            "cameraGrid"
+        );
+
+
+    grid.innerHTML = "";
+
+
+    if (cameras.length === 0) {
+
+        grid.innerHTML = `
+
+            <div class="loading">
+
+                No cameras found.
+
+            </div>
+
+        `;
+
+        return;
+
+    }
+
+
+    cameras.forEach(camera => {
+
+        createCameraCard(camera);
+
+    });
+
+}
+
+
+
+/* =====================================================
+   CREATE CAMERA CARD
+===================================================== */
+
+
+function createCameraCard(camera) {
+
+
+    const grid =
+        document.getElementById(
+            "cameraGrid"
+        );
+
+
+    const color =
+        getVendorColor(
+            camera.VendorID
+        );
+
+
+    const card =
+        document.createElement(
+            "div"
+        );
+
+
+    card.className =
+        "camera-card";
+
+
+    card.id =
+        `camera-${camera.CameraID}`;
+
+
+    card.style.borderColor =
+        color;
+
+
+    card.innerHTML = `
+
+        <div class="camera-header">
+
+            <div class="camera-name">
+
+                ${camera.CameraName}
+
+            </div>
+
+
+            <div class="camera-info">
+
+
+                <div
+                    class="status"
+                    id="status-${camera.CameraID}">
+
+                    <span
+                        class="status-dot offline"
+                        id="dot-${camera.CameraID}">
+                    </span>
+
+                    <span
+                        id="status-text-${camera.CameraID}">
+
+                        OFFLINE
+
+                    </span>
+
+                </div>
+
+
+                <div
+                    class="vendor-badge"
+                    style="border:1px solid ${color}">
+
+                    ${camera.VendorName}
+
+                </div>
+
+
+            </div>
+
+        </div>
+
+
+
+        <div class="video-container">
+
+
+            <div
+                class="offline-screen"
+                id="offline-${camera.CameraID}">
+
+                <div class="icon">
+
+                    ▣
+
+                </div>
+
+                <div>
+
+                    Camera not streaming
+
+                </div>
+
+            </div>
+
+
+            <iframe
+                id="iframe-${camera.CameraID}"
+                allow="autoplay; fullscreen">
+
+            </iframe>
+
+
+        </div>
+
+
+
+        <div class="camera-footer">
+
+
+            <div class="camera-id">
+
+                ID: ${camera.CameraID}
+
+            </div>
+
+
+            <div class="camera-actions">
+
+
+                <button
+                    class="start-btn"
+                    onclick="startCamera(${camera.CameraID})">
+
+                    ▶ Start
+
+                </button>
+
+
+                <button
+                    class="stop-btn"
+                    onclick="stopCamera(${camera.CameraID})">
+
+                    ■ Stop
+
+                </button>
+
+
+            </div>
+
+
+        </div>
+
+    `;
+
+
+    grid.appendChild(card);
+
+}
+
+
+
+/* =====================================================
+   START SINGLE CAMERA
+===================================================== */
+
+
+async function startCamera(cameraId) {
+
+
+    const camera =
+        cameras.find(
+            c =>
+                c.CameraID === cameraId
+        );
+
+
+    if (!camera) {
+
+        return;
+
+    }
+
+
+    setCameraStatus(
+        cameraId,
+        "STARTING"
+    );
+
+
+    try {
+
+
+        /*
+         * camera.py:
+         *
+         * POST
+         * /camera/{camera_id}/start
+         *
+         * main.py adds:
+         *
+         * /api/camera
+         *
+         * Therefore:
+         *
+         * /api/camera/camera/{camera_id}/start
+         */
+
+
+        const response =
+            await fetch(
+                `${API_URL}/api/camera/camera/${cameraId}/start`,
+                {
+                    method: "POST"
+                }
+            );
+
+
+        const data =
+            await response.json();
+
+
+        console.log(
+            "Start camera:",
+            data
+        );
+
+
+        if (!response.ok) {
+
+            /*
+             * MediaMTX may say the path
+             * already exists.
+             */
+
+            if (
+                data.status_code === 400 &&
+                data.response &&
+                data.response.includes(
+                    "path already exists"
+                )
+            ) {
+
+                console.log(
+                    "Path already exists. Using existing stream."
+                );
+
+            }
+            else {
+
+                throw new Error(
+                    data.message ||
+                    "Failed to start camera"
+                );
+
+            }
+
+        }
+
+
+
+        /*
+         * Get stream information
+         */
+
+
+        const streamResponse =
+            await fetch(
+                `${API_URL}/api/camera/camera/${cameraId}/stream`
+            );
+
+
+        if (!streamResponse.ok) {
+
+            throw new Error(
+                "Failed to get stream information"
+            );
+
+        }
+
+
+        const streamData =
+            await streamResponse.json();
+
+
+        console.log(
+            "Stream data:",
+            streamData
+        );
+
+
+        const streamName =
+            streamData.stream_name;
+
+
+        camera.streamName =
+            streamName;
+
+
+
+        /*
+         * MediaMTX WebRTC
+         *
+         * Port 8889
+         */
+
+
+        const iframe =
+            document.getElementById(
+                `iframe-${cameraId}`
+            );
+
+
+        const offlineScreen =
+            document.getElementById(
+                `offline-${cameraId}`
+            );
+
+
+        iframe.src = `${MEDIAMTX_URL}/${streamName}/`;
+
+
+        iframe.style.display =
+            "block";
+
+
+        offlineScreen.style.display =
+            "none";
+
+
+        camera.status =
+            "ONLINE";
+
+
+        setCameraStatus(
+            cameraId,
+            "ONLINE"
+        );
+
+
+        updateStats();
+
+
+    }
+    catch (error) {
+
+
+        console.error(
+            `Camera ${cameraId}:`,
+            error
+        );
+
+
+        camera.status =
+            "OFFLINE";
+
+
+        setCameraStatus(
+            cameraId,
+            "OFFLINE"
+        );
+
+
+        updateStats();
+
+    }
+
+}
+
+
+
+/* =====================================================
+   STOP SINGLE CAMERA
+===================================================== */
+
+
+async function stopCamera(cameraId) {
+
+
+    const camera =
+        cameras.find(
+            c =>
+                c.CameraID === cameraId
+        );
+
+
+    if (!camera) {
+
+        return;
+
+    }
+
+
+    try {
+
+
+        /*
+         * camera.py:
+         *
+         * POST
+         * /camera/{camera_id}/stop
+         *
+         * final URL:
+         *
+         * /api/camera/camera/{camera_id}/stop
+         */
+
+
+        const response =
+            await fetch(
+                `${API_URL}/api/camera/camera/${cameraId}/stop`,
+                {
+                    method: "POST"
+                }
+            );
+
+
+        const data =
+            await response.json();
+
+
+        console.log(
+            "Stop camera:",
+            data
+        );
+
+
+        const iframe =
+            document.getElementById(
+                `iframe-${cameraId}`
+            );
+
+
+        const offlineScreen =
+            document.getElementById(
+                `offline-${cameraId}`
+            );
+
+
+        iframe.src = "";
+
+
+        iframe.style.display =
+            "none";
+
+
+        offlineScreen.style.display =
+            "flex";
+
+
+        camera.status =
+            "OFFLINE";
+
+
+        setCameraStatus(
+            cameraId,
+            "OFFLINE"
+        );
+
+
+        updateStats();
+
+
+    }
+    catch (error) {
+
+
+        console.error(
+            `Stop camera ${cameraId}:`,
+            error
+        );
+
+    }
+
+}
+
+
+
+/* =====================================================
+   START ALL CAMERAS
+===================================================== */
+
+
+async function startAllCameras() {
+
+
+    for (
+        const camera of cameras
+    ) {
+
+        await startCamera(
+            camera.CameraID
+        );
+
+    }
+
+}
+
+
+
+/* =====================================================
+   STOP ALL CAMERAS
+===================================================== */
+
+
+async function stopAllCameras() {
+
+
+    for (
+        const camera of cameras
+    ) {
+
+        await stopCamera(
+            camera.CameraID
+        );
+
+    }
+
+}
+
+
+
+/* =====================================================
+   UPDATE CAMERA STATUS
+===================================================== */
+
+
+function setCameraStatus(
+    cameraId,
+    status
+) {
+
+
+    const text =
+        document.getElementById(
+            `status-text-${cameraId}`
+        );
+
+
+    const dot =
+        document.getElementById(
+            `dot-${cameraId}`
+        );
+
+
+    if (!text || !dot) {
+
+        return;
+
+    }
+
+
+    text.textContent =
+        status;
+
+
+    dot.className =
+        "status-dot";
+
+
+    if (status === "ONLINE") {
+
+        dot.classList.add(
+            "online"
+        );
+
+    }
+    else if (
+        status === "STARTING"
+    ) {
+
+        dot.classList.add(
+            "starting"
+        );
+
+    }
+    else {
+
+        dot.classList.add(
+            "offline"
+        );
+
+    }
+
+}
+
+
+
+/* =====================================================
+   UPDATE STATISTICS
+===================================================== */
+
+
+function updateStats() {
+
+
+    const total =
+        cameras.length;
+
+
+    const streaming =
+        cameras.filter(
+            camera =>
+                camera.status === "ONLINE"
+        ).length;
+
+
+    const offline =
+        total - streaming;
+
+
+    document.getElementById(
+        "totalCameras"
+    ).textContent =
+        total;
+
+
+    document.getElementById(
+        "streamingCameras"
+    ).textContent =
+        streaming;
+
+
+    document.getElementById(
+        "offlineCameras"
+    ).textContent =
+        offline;
+
+}
+
+
+
+/* =====================================================
+   INITIAL LOAD
+===================================================== */
+
+
+loadAllCameras();
+
+
+</script>
+
+
+</body>
+
+</html>
