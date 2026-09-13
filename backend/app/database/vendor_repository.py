@@ -12,8 +12,8 @@ def add_vendor(vendor_name: str , vendor_url: str,camera_number:int):
      conn = get_db()
      cursor = conn.cursor()
      try:
-          sql = """ inseart into vendor (VendorName,NUMBER_CAM,URL,enable) values(%s,%s,%s,%s)""" 
-          values = (vendor_name,vendor_url,camera_number,"true")
+          sql = """ insert into vendor (VendorName,NUMBER_CAM,URL,enable) values(%s,%s,%s,%s)""" 
+          values = (vendor_name,camera_number,vendor_url,"true")
           cursor.execute(sql, values)
           conn.commit()
           return {"message" : "vendor added into database"}
@@ -33,8 +33,8 @@ def remove_vendor(vendor_id:int):
      conn = get_db()
      cursor = conn.cursor()
      try:
-          sql = """ DELET from vendor where vendor_id = %s""" 
-          values = vendor_id
+          sql = """ DELETE from vendor where VendorID = %s""" 
+          values = (vendor_id,)
           cursor.execute(sql, values)
           deleted = cursor.rowcount 
           if deleted is None  :
@@ -96,6 +96,33 @@ def info_vendor(vendor_id):
     finally:
         cursor.close()
         conn.close()
+    
+    
+
+#-------------------------------------
+# VENOR 
+#---------------------------------
+
+def vendor():
+    conn = get_db()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("SELECT VendorID, VendorName, NUMBER_CAM, URL, enable FROM vendor")
+        rows = cursor.fetchall()
+    finally:
+        cursor.close()
+        conn.close()
+
+    return [
+        {
+            "VendorID": r[0],
+            "VendorName": r[1],
+            "NUMBER_CAM": r[2],
+            "URL": r[3],
+            "enable": r[4]
+        }
+        for r in rows
+    ]
     
     
 

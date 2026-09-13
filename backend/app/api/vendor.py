@@ -8,8 +8,7 @@ router = APIRouter()
 
 @router.get("/")
 def get_vendors():
-    return {"message": "Vendors API"}
-
+    return  {"ok": True, "vendors": vendor_repository.vendor()}
 
 class VendorCreate(BaseModel):
     vendor_name: str

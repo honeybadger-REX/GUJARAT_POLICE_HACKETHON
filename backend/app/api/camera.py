@@ -1,8 +1,9 @@
 import mysql.connector
 import httpx
 import subprocess
+from pydantic import BaseModel
 from fastapi import APIRouter
-
+from ..database import camera_repository
 MEDIAMTX_API = "http://127.0.0.1:9997"
 MEDIAMTX_WEBRTC = "http://127.0.0.1:8889"  # browser-facing WebRTC player (MediaMTX serves this itself)
 
@@ -26,143 +27,50 @@ def get_db():
     return conn
 
 
+
+#------------------------------------
+#  GET CAMERA DETAIL
+#-----------------------------------
+
 @router.get("/")
 def get_camera():
-    return {"message": "Camera API"}
+    return {"message": "Camera API" ,"Camera_list" :  camera_repository.get_cam_info()}
 
 
-# ---------------------------------------------
-# DASHBOARD — GET /cameras (per setup guide section 12)
-# Joins camera + vendor so the operator doesn't have to pick
-# a vendor just to see the camera list.
-# ---------------------------------------------
-# @router.get("/cameras")
-# def list_all_cameras():
+#---------------------------
+# ADD CAMERA
+#---------------------
+class camADD(BaseModel):
+    VendorID: int
+
+@router.post("camera/add")
+def add_cam(vendor:camADD):
+    camera_added =  camera_repository.add_camera(vendor.VendorID)
+    return {"ok" : True, "camera_add":camera_added}
 
 
-# ---------------------------------------------
-# START — creates the MediaMTX path, returns the WebRTC
-# playback URL so the frontend has something to actually render.
-# ---------------------------------------------
-@router.post("/camera/{camera_id}/start")
-async def start_camera(camera_id: int):
-    conn = get_db()
-    cursor = conn.cursor()
-    try:
-        cursor.execute(
-            "SELECT CameraName, CameraURL FROM camera WHERE CameraID = %s",
-            (camera_id,)
-        )
-        camera = cursor.fetchone()
-    finally:
-        cursor.close()
-        conn.close()
+#----------------------------
+# DELET CAMERA
+#---------------------------
 
-    if camera is None:
-        return {"message": "Camera not found"}
-
-    camera_name = camera[0]
-    camera_url = camera[1]
-    stream_name = camera_name.lower()
-
-    mediamtx_data = {
-        "source": camera_url,
-        "rtspTransport": "tcp"
-    }
-
-    async with httpx.AsyncClient() as client:
-        # Idempotent-ish: if the path already exists, MediaMTX returns
-        # an error here (see guide's troubleshooting table, "Path already
-        # exists"). Treat that case as success instead of failing the request.
-        response = await client.post(
-            f"{MEDIAMTX_API}/v3/config/paths/add/{stream_name}",
-            json=mediamtx_data
-        )
-
-    path_already_existed = response.status_code == 400 and "already exists" in response.text.lower()
-
-    if response.status_code not in (200, 201) and not path_already_existed:
-        return {
-            "message": "Failed to create MediaMTX stream",
-            "status_code": response.status_code,
-            "response": response.text
-        }
-
-    return {
-        "message": "Camera stream started",
-        "camera_id": camera_id,
-        "camera_name": camera_name,
-        "stream_name": stream_name,
-        "webrtc_url": f"{MEDIAMTX_WEBRTC}/{stream_name}/"
-    }
+class camDEL(BaseModel):
+    camID: int
 
 
-@router.get("/camera/{camera_id}/stream")
-def get_camera_stream(camera_id: int):
-    conn = get_db()
-    cursor = conn.cursor()
-    try:
-        cursor.execute(
-            "SELECT CameraName FROM camera WHERE CameraID = %s",
-            (camera_id,)
-        )
-        camera = cursor.fetchone()
-    finally:
-        cursor.close()
-        conn.close()
+@router.post("camera/remove")
+def remove_cam(camera:camDEL):
+    camera =  camera_repository.remove_camera(camera.camID)
+    return {"ok" : True, "camera_add":camera}
+#----------------------------------
+# UPDATE CAMERA
+#-------------------------------
 
-    if camera is None:
-        return {"message": "Camera not found"}
+class camUP(BaseModel):
+    camID: int
+    statues : str
 
-    camera_name = camera[0]
-    stream_name = camera_name.lower()
-
-    return {
-        "camera_id": camera_id,
-        "camera_name": camera_name,
-        "stream_name": stream_name,
-        "protocol": "webrtc",
-        "webrtc_url": f"{MEDIAMTX_WEBRTC}/{stream_name}/"
-    }
-
-
-@router.post("/camera/{camera_id}/stop")
-async def stop_camera(camera_id: int):
-    conn = get_db()
-    cursor = conn.cursor()
-    try:
-        cursor.execute(
-            "SELECT CameraName, CameraURL FROM camera WHERE CameraID = %s",
-            (camera_id,)
-        )
-        camera = cursor.fetchone()
-    finally:
-        cursor.close()
-        conn.close()
-
-    if camera is None:
-        return {"message": "Camera not found"}
-
-    camera_name = camera[0]
-    stream_name = camera_name.lower()
-
-    async with httpx.AsyncClient() as client:
-        response = await client.delete(
-            f"{MEDIAMTX_API}/v3/config/paths/delete/{stream_name}"
-        )
-
-    if response.status_code not in (200, 201):
-        return {
-            "message": "Failed to stop MediaMTX stream",
-            "status_code": response.status_code,
-            "response": response.text
-        }
-
-    return {
-        "message": "Camera stream stopped",
-        "camera_id": camera_id,
-        "camera_name": camera_name,
-        "stream_name": stream_name
-    }
-
+@router.post("camera/update")
+def remove_cam(camera:camUP):
+    camera =  camera_repository.update_statues(camera.camID,camera.statues)
+    return {"ok" : True, "camera_add":camera}
 

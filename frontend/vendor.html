@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Vendor Management</title>
+<style>
+    :root {
+        --bg: #0d1117; --panel: #161b22; --border: #30363d;
+        --text: #e6edf3; --muted: #8b949e;
+        --green: #3fb950; --red: #f85149; --blue: #58a6ff;
+    }
+    * { box-sizing: border-box; }
+    body {
+        font-family: -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+        background: var(--bg); color: var(--text);
+        margin: 0; padding: 24px 32px 48px;
+    }
+    h2 { margin: 0 0 4px; font-size: 20px; }
+    .sub { color: var(--muted); font-size: 13px; margin-bottom: 24px; }
+
+    .panel {
+        background: var(--panel); border: 1px solid var(--border);
+        border-radius: 10px; padding: 18px; margin-bottom: 24px;
+    }
+    .panel h3 { margin: 0 0 14px; font-size: 14px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
+
+    .add-form { display: flex; gap: 10px; flex-wrap: wrap; align-items: end; }
+    .field { display: flex; flex-direction: column; gap: 4px; }
+    .field label { font-size: 11px; color: var(--muted); }
+    input {
+        background: #0d1117; border: 1px solid var(--border); color: var(--text);
+        padding: 8px 10px; border-radius: 6px; font-size: 13px; min-width: 160px;
+    }
+    input:focus { outline: none; border-color: var(--blue); }
+
+    button {
+        padding: 8px 16px; border: none; border-radius: 6px;
+        font-size: 13px; font-weight: 600; cursor: pointer; transition: opacity 0.15s;
+    }
+    button:hover { opacity: 0.85; }
+    .btn-add { background: var(--blue); color: #041224; }
+    .btn-save { background: var(--green); color: #04150a; }
+    .btn-delete { background: var(--red); color: #2b0705; }
+
+    table { width: 100%; border-collapse: collapse; }
+    th { text-align: left; font-size: 11px; color: var(--muted); text-transform: uppercase; padding: 8px 10px; border-bottom: 1px solid var(--border); }
+    td { padding: 8px 10px; border-bottom: 1px solid var(--border); font-size: 13px; }
+    td input { width: 100%; min-width: 0; }
+    tr:last-child td { border-bottom: none; }
+
+    .status-msg { font-size: 12px; margin-top: 10px; min-height: 16px; }
+    .status-msg.ok { color: var(--green); }
+    .status-msg.err { color: var(--red); }
+
+    .empty { color: var(--muted); padding: 20px; text-align: center; }
+</style>
+</head>
+<body>
+
+<h2>Vendor Management</h2>
+<div class="sub" id="summary">Loading vendors…</div>
+
+<div class="panel">
+    <h3>Add Vendor</h3>
+    <div class="add-form">
+        <div class="field">
+            <label>Vendor Name</label>
+            <input id="new-name" placeholder="Vendor A">
+        </div>
+        <div class="field">
+            <label>Base URL</label>
+            <input id="new-url" placeholder="rtsp://192.168.1.10:554/cam">
+        </div>
+        <div class="field">
+            <label>Camera Count</label>
+            <input id="new-count" type="number" min="1" placeholder="10">
+        </div>
+        <button class="btn-add" onclick="addVendor()">Add Vendor</button>
+    </div>
+    <div class="status-msg" id="add-status"></div>
+</div>
+
+<div class="panel">
+    <h3>Vendors</h3>
+    <table id="vendor-table">
+        <thead>
+            <tr>
+                <th>ID</th><th>Name</th><th>Camera Count</th><th>Base URL</th><th>Enabled</th><th></th><th></th>
+            </tr>
+        </thead>
+        <tbody id="vendor-rows"></tbody>
+    </table>
+    <div class="empty" id="empty-msg" style="display:none;">No vendors yet.</div>
+</div>
+
+<script>
+const API = "http://127.0.0.1:8000/api/vendors";
+let vendors = [];
+
+async function loadVendors() {
+    const response = await fetch(`${API}/`);
+    const data = await response.json();
+    vendors = data.vendors || [];
+    renderRows();
+    document.getElementById("summary").innerText = `${vendors.length} vendor${vendors.length === 1 ? "" : "s"}`;
+}
+
+
+function renderRows() {
+    const tbody = document.getElementById("vendor-rows");
+    const emptyMsg = document.getElementById("empty-msg");
+
+    if (vendors.length === 0) {
+        tbody.innerHTML = "";
+        emptyMsg.style.display = "block";
+        return;
+    }
+    emptyMsg.style.display = "none";
+
+    tbody.innerHTML = vendors.map(v => `
+        <tr id="row-${v.VendorID}">
+            <td>${v.VendorID}</td>
+            <td><input id="name-${v.VendorID}" value="${v.VendorName}"></td>
+            <td><input id="count-${v.VendorID}" type="number" value="${v.NUMBER_CAM}"></td>
+            <td><input id="url-${v.VendorID}" value="${v.URL}"></td>
+            <td><input id="enable-${v.VendorID}" value="${v.enable}"></td>
+            <td><button class="btn-save" onclick="saveVendor(${v.VendorID})">Save</button></td>
+            <td><button class="btn-delete" onclick="deleteVendor(${v.VendorID})">Delete</button></td>
+        </tr>
+    `).join("");
+}
+
+async function addVendor() {
+    const status = document.getElementById("add-status");
+    const name = document.getElementById("new-name").value.trim();
+    const url = document.getElementById("new-url").value.trim();
+    const count = parseInt(document.getElementById("new-count").value, 10);
+
+    if (!name || !url || !count) {
+        status.textContent = "Fill in all fields.";
+        status.className = "status-msg err";
+        return;
+    }
+
+    const response = await fetch(`${API}/vendor/add`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ vendor_name: name, vendor_url: url, camera_number: count })
+    });
+    const data = await response.json();
+
+    if (data.ok) {
+        status.textContent = `Vendor added (ID ${data.vendor_id}).`;
+        status.className = "status-msg ok";
+        document.getElementById("new-name").value = "";
+        document.getElementById("new-url").value = "";
+        document.getElementById("new-count").value = "";
+        loadVendors();
+    } else {
+        status.textContent = data.message || "Failed to add vendor.";
+        status.className = "status-msg err";
+    }
+}
+
+// Saves each changed field with its own call to the dynamic /vendor/update
+// endpoint — simplest approach given that endpoint updates one column at a time.
+async function saveVendor(vendorId) {
+    const original = vendors.find(v => v.VendorID === vendorId);
+    const updates = [
+        { column: "VendorName", value: document.getElementById(`name-${vendorId}`).value },
+        { column: "NUMBER_CAM", value: parseInt(document.getElementById(`count-${vendorId}`).value, 10) },
+        { column: "URL", value: document.getElementById(`url-${vendorId}`).value },
+        { column: "enable", value: document.getElementById(`enable-${vendorId}`).value }
+    ];
+
+    for (const update of updates) {
+        const originalValue = original[update.column];
+        if (String(originalValue) === String(update.value)) continue; // skip unchanged fields
+
+        await fetch(`${API}/vendor/update`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                change_where: "VendorID",
+                change_where_data: vendorId,
+                change_what: update.column,
+                change_what_data: update.value
+            })
+        });
+    }
+
+    loadVendors();
+}
+
+async function deleteVendor(vendorId) {
+    if (!confirm(`Delete vendor ${vendorId}? This cannot be undone.`)) return;
+
+    const response = await fetch(`${API}/vendor/delete`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ vendor_id: vendorId })
+    });
+    const data = await response.json();
+
+    if (data.ok) {
+        loadVendors();
+    } else {
+        alert(data.message || "Failed to delete vendor.");
+    }
+}
+
+loadVendors();
+</script>
+
+</body>
+</html>
