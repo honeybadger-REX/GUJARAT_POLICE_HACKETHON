@@ -36,32 +36,8 @@ def get_camera():
 # Joins camera + vendor so the operator doesn't have to pick
 # a vendor just to see the camera list.
 # ---------------------------------------------
-@router.get("/cameras")
-def list_all_cameras():
-    conn = get_db()
-    cursor = conn.cursor()
-    try:
-        cursor.execute("""
-            SELECT c.CameraID, c.CameraName, c.VendorID, v.VendorName, c.enable
-            FROM camera c
-            JOIN vendor v ON v.VendorID = c.VendorID
-            ORDER BY c.CameraID
-        """)
-        rows = cursor.fetchall()
-    finally:
-        cursor.close()
-        conn.close()
-
-    return [
-        {
-            "CameraID": row[0],
-            "CameraName": row[1],
-            "VendorID": row[2],
-            "VendorName": row[3],
-            "status": "ONLINE" if row[4] else "OFFLINE"
-        }
-        for row in rows
-    ]
+# @router.get("/cameras")
+# def list_all_cameras():
 
 
 # ---------------------------------------------
@@ -190,23 +166,3 @@ async def stop_camera(camera_id: int):
     }
 
 
-def check_camera(url: str) -> str:
-    """FFmpeg RTSP health check. 5s of stream requested, 15s hard timeout."""
-    command = [
-        "ffmpeg",
-        "-rtsp_transport", "tcp",
-        "-i", url,
-        "-t", "5",
-        "-f", "null",
-        "-"
-    ]
-    try:
-        result = subprocess.run(
-            command,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-            timeout=15
-        )
-        return "ONLINE" if result.returncode == 0 else "OFFLINE"
-    except subprocess.TimeoutExpired:
-        return "OFFLINE"
