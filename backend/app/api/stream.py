@@ -22,8 +22,8 @@ def get_streams():
 
 
 @router.post("/camera/{camera_id}/start")
-def start_camera(camera_id: int):
-    stream_add = stream_service.start_camera(camera_id)
+async def start_camera(camera_id: int):
+    stream_add = await stream_service.start_camera(camera_id)
     return {"ok" : True,"steaming_cam":stream_add}
 
 
@@ -46,7 +46,7 @@ def get_camera_stream(camera_id: int):
 
 @router.post("/camera/{camera_id}/stop")
 async def stop_camera(camera_id: int):
-    stream_stop = stream_service.stop_camera(camera_id)
+    stream_stop = await stream_service.stop_camera(camera_id)
     return {"ok" : True,"steaming_cam":stream_stop}
   
 

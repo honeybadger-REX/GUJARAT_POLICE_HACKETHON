@@ -3,6 +3,7 @@ import httpx
 import subprocess
 from pydantic import BaseModel
 from fastapi import APIRouter
+import asyncio
 from ..database import camera_repository
 MEDIAMTX_API = "http://127.0.0.1:9997"
 MEDIAMTX_WEBRTC = "http://127.0.0.1:8889"  # browser-facing WebRTC player (MediaMTX serves this itself)
@@ -43,7 +44,7 @@ def get_camera():
 class camADD(BaseModel):
     VendorID: int
 
-@router.post("camera/add")
+@router.post("/camera/add")
 def add_cam(vendor:camADD):
     camera_added =  camera_repository.add_camera(vendor.VendorID)
     return {"ok" : True, "camera_add":camera_added}
@@ -57,7 +58,7 @@ class camDEL(BaseModel):
     camID: int
 
 
-@router.post("camera/remove")
+@router.post("/camera/remove")
 def remove_cam(camera:camDEL):
     camera =  camera_repository.remove_camera(camera.camID)
     return {"ok" : True, "camera_add":camera}
@@ -69,7 +70,7 @@ class camUP(BaseModel):
     camID: int
     statues : str
 
-@router.post("camera/update")
+@router.post("/camera/update")
 def remove_cam(camera:camUP):
     camera =  camera_repository.update_statues(camera.camID,camera.statues)
     return {"ok" : True, "camera_add":camera}

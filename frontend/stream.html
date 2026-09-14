@@ -1,125 +1,57 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Camera Dashboard</title>
+<title>Camera Streaming</title>
 <style>
     :root {
-        --bg: #0d1117;
-        --panel: #161b22;
-        --border: #30363d;
-        --text: #e6edf3;
-        --muted: #8b949e;
-        --green: #3fb950;
-        --red: #f85149;
+        --bg: #0d1117; --panel: #161b22; --border: #30363d;
+        --text: #e6edf3; --muted: #8b949e;
+        --green: #3fb950; --red: #f85149;
     }
-
     * { box-sizing: border-box; }
-
     body {
         font-family: -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-        background: var(--bg);
-        color: var(--text);
-        margin: 0;
-        padding: 24px 32px 48px;
+        background: var(--bg); color: var(--text);
+        margin: 0; padding: 24px 32px 48px;
     }
-
     header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        flex-wrap: wrap;
-        gap: 16px;
-        margin-bottom: 24px;
-        padding-bottom: 16px;
-        border-bottom: 1px solid var(--border);
+        display: flex; align-items: center; justify-content: space-between;
+        flex-wrap: wrap; gap: 16px; margin-bottom: 24px;
+        padding-bottom: 16px; border-bottom: 1px solid var(--border);
     }
-
-    header h2 { margin: 0; font-size: 20px; font-weight: 600; }
+    header h2 { margin: 0; font-size: 20px; }
     header .sub { color: var(--muted); font-size: 13px; margin-top: 4px; }
-
-    .controls { display: flex; gap: 10px; align-items: center; }
-
+    .controls { display: flex; gap: 10px; }
     button {
-        padding: 10px 22px;
-        border: none;
-        border-radius: 6px;
-        font-size: 14px;
-        font-weight: 600;
-        cursor: pointer;
-        transition: opacity 0.15s;
+        padding: 10px 22px; border: none; border-radius: 6px;
+        font-size: 14px; font-weight: 600; cursor: pointer; transition: opacity 0.15s;
     }
     button:hover { opacity: 0.85; }
     button:disabled { opacity: 0.4; cursor: not-allowed; }
-
     .start { background: var(--green); color: #04150a; }
-    .stop  { background: var(--red); color: #2b0705; }
-
+    .stop { background: var(--red); color: #2b0705; }
     #summary { font-size: 13px; color: var(--muted); }
     #summary b { color: var(--text); }
-
-    .grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
-        gap: 18px;
-    }
-
-    .camera {
-        background: var(--panel);
-        border: 1px solid var(--border);
-        border-radius: 10px;
-        overflow: hidden;
-    }
-
-    .camera-head {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 12px 14px;
-        border-bottom: 1px solid var(--border);
-    }
-
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 18px; }
+    .camera { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+    .camera-head { display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; border-bottom: 1px solid var(--border); }
     .camera-head h3 { margin: 0; font-size: 14px; font-weight: 600; }
-
-    .badge {
-        font-size: 11px;
-        font-weight: 700;
-        padding: 3px 9px;
-        border-radius: 999px;
-        letter-spacing: 0.03em;
-        text-transform: uppercase;
-    }
-    .badge.stopped  { background: #30363d; color: var(--muted); }
+    .badge { font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 999px; letter-spacing: 0.03em; text-transform: uppercase; }
+    .badge.stopped { background: #30363d; color: var(--muted); }
     .badge.starting { background: #3a2f0f; color: #d29922; }
-    .badge.running  { background: #0f3a1c; color: var(--green); }
-    .badge.error    { background: #3a0f0f; color: var(--red); }
-
-    .screen {
-        width: 100%;
-        aspect-ratio: 16 / 9;
-        background: #000;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-
+    .badge.running { background: #0f3a1c; color: var(--green); }
+    .badge.error { background: #3a0f0f; color: var(--red); }
+    .screen { width: 100%; aspect-ratio: 16 / 9; background: #000; display: flex; align-items: center; justify-content: center; }
     .screen iframe { width: 100%; height: 100%; border: none; }
     .screen .placeholder { color: #30363d; font-size: 12px; }
-
-    .empty {
-        color: var(--muted);
-        font-size: 14px;
-        padding: 40px;
-        text-align: center;
-        border: 1px dashed var(--border);
-        border-radius: 10px;
-    }
+    .empty { color: var(--muted); font-size: 14px; padding: 40px; text-align: center; border: 1px dashed var(--border); border-radius: 10px; }
 </style>
 </head>
 <body>
 
 <header>
     <div>
-        <h2>Gujarat Police — Camera Dashboard</h2>
+        <h2>Camera Streaming</h2>
         <div class="sub" id="summary">Loading cameras…</div>
     </div>
     <div class="controls">
@@ -131,16 +63,18 @@
 <div class="grid" id="cameras"></div>
 
 <script>
-const API = "http://127.0.0.1:8000";
+const CAMERA_API = "http://127.0.0.1:8000/api/camera";
+const STREAM_API = "http://127.0.0.1:8000/api/streams";
 let cameras = [];
 
 // -----------------------------
-// LOAD CAMERAS
+// LOAD CAMERAS — reuses the camera list endpoint, since streaming
+// needs the same camera IDs/names as the management page.
 // -----------------------------
 async function loadCameras() {
-    const response = await fetch(`${API}/api/vendors/vendor/1/cameras`, { method: "GET" });
+    const response = await fetch(`${CAMERA_API}/`);
     const data = await response.json();
-    cameras = data.cameras || [];
+    cameras = data.Camera_list || [];
     renderGrid();
     updateSummary();
 }
@@ -192,9 +126,9 @@ function setControlsEnabled(enabled) {
 }
 
 // -----------------------------
-// START ALL — fires every camera's /start in parallel and
-// updates each card as its own response lands, so one slow or
-// dead camera doesn't hold up the rest of the grid.
+// START ALL — fires every camera's /start in parallel.
+// NOTE: the response is nested as data.steaming_cam.webrtc_url —
+// adjust this path if stream_service.start_camera's return shape differs.
 // -----------------------------
 async function startAllCameras() {
     setControlsEnabled(false);
@@ -204,12 +138,13 @@ async function startAllCameras() {
         setBadge(id, "starting", "Starting");
 
         try {
-            const response = await fetch(`${API}/api/camera/camera/${id}/start`, { method: "POST" });
+            const response = await fetch(`${STREAM_API}/camera/${id}/start`, { method: "POST" });
             const data = await response.json();
+            const webrtcUrl = data.steaming_cam && data.steaming_cam.webrtc_url;
 
-            if (response.ok && data.webrtc_url) {
+            if (response.ok && webrtcUrl) {
                 setBadge(id, "running", "Live");
-                setScreen(id, data.webrtc_url);
+                setScreen(id, webrtcUrl);
             } else {
                 setBadge(id, "error", "Error");
             }
@@ -233,7 +168,7 @@ async function stopAllCameras() {
         const id = camera.CameraID;
 
         try {
-            const response = await fetch(`${API}/api/camera/camera/${id}/stop`, { method: "POST" });
+            const response = await fetch(`${STREAM_API}/camera/${id}/stop`, { method: "POST" });
             if (response.ok) {
                 setBadge(id, "stopped", "Stopped");
                 setScreen(id, null);

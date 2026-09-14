@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Camera Management</title>
+<style>
+    :root {
+        --bg: #0d1117; --panel: #161b22; --border: #30363d;
+        --text: #e6edf3; --muted: #8b949e;
+        --green: #3fb950; --red: #f85149; --blue: #58a6ff;
+    }
+    * { box-sizing: border-box; }
+    body {
+        font-family: -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+        background: var(--bg); color: var(--text);
+        margin: 0; padding: 24px 32px 48px;
+    }
+    h2 { margin: 0 0 4px; font-size: 20px; }
+    .sub { color: var(--muted); font-size: 13px; margin-bottom: 24px; }
+    .panel {
+        background: var(--panel); border: 1px solid var(--border);
+        border-radius: 10px; padding: 18px; margin-bottom: 24px;
+    }
+    .panel h3 { margin: 0 0 14px; font-size: 14px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
+    .add-form { display: flex; gap: 10px; flex-wrap: wrap; align-items: end; }
+    .field { display: flex; flex-direction: column; gap: 4px; }
+    .field label { font-size: 11px; color: var(--muted); }
+    input, select {
+        background: #0d1117; border: 1px solid var(--border); color: var(--text);
+        padding: 8px 10px; border-radius: 6px; font-size: 13px; min-width: 160px;
+    }
+    input:focus, select:focus { outline: none; border-color: var(--blue); }
+    button {
+        padding: 8px 16px; border: none; border-radius: 6px;
+        font-size: 13px; font-weight: 600; cursor: pointer; transition: opacity 0.15s;
+    }
+    button:hover { opacity: 0.85; }
+    .btn-add { background: var(--blue); color: #041224; }
+    .btn-save { background: var(--green); color: #04150a; }
+    .btn-delete { background: var(--red); color: #2b0705; }
+    table { width: 100%; border-collapse: collapse; }
+    th { text-align: left; font-size: 11px; color: var(--muted); text-transform: uppercase; padding: 8px 10px; border-bottom: 1px solid var(--border); }
+    td { padding: 8px 10px; border-bottom: 1px solid var(--border); font-size: 13px; }
+    tr:last-child td { border-bottom: none; }
+    .status-msg { font-size: 12px; margin-top: 10px; min-height: 16px; }
+    .status-msg.ok { color: var(--green); }
+    .status-msg.err { color: var(--red); }
+    .empty { color: var(--muted); padding: 20px; text-align: center; }
+</style>
+</head>
+<body>
+
+<h2>Camera Management</h2>
+<div class="sub" id="summary">Loading cameras…</div>
+
+<div class="panel">
+    <h3>Add Cameras for a Vendor</h3>
+    <div class="add-form">
+        <div class="field">
+            <label>Vendor ID</label>
+            <input id="new-vendor-id" type="number" placeholder="1">
+        </div>
+        <button class="btn-add" onclick="addCameras()">Add Cameras</button>
+    </div>
+    <div class="status-msg" id="add-status"></div>
+</div>
+
+<div class="panel">
+    <h3>Cameras</h3>
+    <table>
+        <thead>
+            <tr><th>ID</th><th>Name</th><th>Vendor ID</th><th>URL</th><th>Status</th><th></th><th></th></tr>
+        </thead>
+        <tbody id="camera-rows"></tbody>
+    </table>
+    <div class="empty" id="empty-msg" style="display:none;">No cameras yet.</div>
+</div>
+
+<script>
+const API = "http://127.0.0.1:8000/api/camera";
+let cameras = [];
+
+async function loadCameras() {
+    const response = await fetch(`${API}/`);
+    const data = await response.json();
+    cameras = data.Camera_list || [];
+    renderRows();
+    document.getElementById("summary").innerText = `${cameras.length} camera${cameras.length === 1 ? "" : "s"}`;
+}
+
+function renderRows() {
+    const tbody = document.getElementById("camera-rows");
+    const emptyMsg = document.getElementById("empty-msg");
+
+    if (cameras.length === 0) {
+        tbody.innerHTML = "";
+        emptyMsg.style.display = "block";
+        return;
+    }
+    emptyMsg.style.display = "none";
+
+    tbody.innerHTML = cameras.map(c => `
+        <tr>
+            <td>${c.CameraID}</td>
+            <td>${c.CameraName}</td>
+            <td>${c.VendorID}</td>
+            <td>${c.CameraURL}</td>
+            <td>
+                <select id="status-${c.CameraID}">
+                    <option value="true" ${String(c.enable) === "true" ? "selected" : ""}>true</option>
+                    <option value="false" ${String(c.enable) === "false" ? "selected" : ""}>false</option>
+                </select>
+            </td>
+            <td><button class="btn-save" onclick="updateStatus(${c.CameraID})">Save</button></td>
+            <td><button class="btn-delete" onclick="removeCamera(${c.CameraID})">Delete</button></td>
+        </tr>
+    `).join("");
+}
+
+async function addCameras() {
+    const status = document.getElementById("add-status");
+    const vendorId = parseInt(document.getElementById("new-vendor-id").value, 10);
+
+    if (!vendorId) {
+        status.textContent = "Enter a vendor ID.";
+        status.className = "status-msg err";
+        return;
+    }
+
+    const response = await fetch(`${API}/camera/add`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ VendorID: vendorId })
+    });
+    const data = await response.json();
+
+    if (data.ok) {
+        status.textContent = "Cameras added.";
+        status.className = "status-msg ok";
+        document.getElementById("new-vendor-id").value = "";
+        loadCameras();
+    } else {
+        status.textContent = "Failed to add cameras.";
+        status.className = "status-msg err";
+    }
+}
+
+// NOTE: the backend field is spelled "statues" (not "status") — matching
+// camera.py's camUP model exactly. Change this if that gets renamed later.
+async function updateStatus(camId) {
+    const value = document.getElementById(`status-${camId}`).value;
+
+    await fetch(`${API}/camera/update`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ camID: camId, statues: value })
+    });
+
+    loadCameras();
+}
+
+async function removeCamera(camId) {
+    if (!confirm(`Delete camera ${camId}? This cannot be undone.`)) return;
+
+    await fetch(`${API}/camera/remove`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ camID: camId })
+    });
+
+    loadCameras();
+}
+
+loadCameras();
+</script>
+
+</body>
+</html>

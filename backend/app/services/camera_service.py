@@ -1,4 +1,4 @@
-from ..database import camera_repository
+from ..database.camera_repository import *
 from ..database.connection import get_db
 import mysql.connector
 import mysql.connector.errors
@@ -7,8 +7,8 @@ import subprocess
 from fastapi import APIRouter
 from concurrent.futures import ThreadPoolExecutor
 import pandas as pd
-
-
+import threading , time
+import asyncio
 
 
 #--------------------------------------------
@@ -42,9 +42,11 @@ def check_camera(url: str):
 def chech_cameras():
     conn = get_db()
     cursor = conn.cursor()
+   
+
     try:
-          cursor.exicute("""Select CameraName , CameraURL,CameraID from camera """ )
-          camera = pd.list(cursor.featchall())
+          cursor.execute("""Select CameraName , CameraURL,CameraID from camera """ )
+          camera = cursor.fetchall()
 
           def check_one_camera(camera):
             camera_name, camera_url,cameraid = camera
@@ -52,9 +54,13 @@ def chech_cameras():
             return  camera_name, status ,camera_url,cameraid
                
           results = []
+          print("enter the  thre worker area")
           with ThreadPoolExecutor(max_workers=10) as executor:
+            print("worker on work")
             for  camera_name, status , camera_url ,cameraid in executor.map(check_one_camera, camera):
-                 camera_repository.update_statues(cameraid,status)
+                 print(camera_name,status,camera_url,cameraid)
+                 upaadtedf =  update_statues(cameraid,status)
+                 print(upaadtedf)
                  results.append({
                         
                                    "CameraName": camera_name,
@@ -67,3 +73,29 @@ def chech_cameras():
         cursor.close()
         conn.close()
     return {"message": "done", "checked": len(results), "cameras": results}
+
+
+
+stop_event = threading.Event()
+
+
+def camera_checker_loop():
+    while not stop_event.is_set():
+        chech_cameras()
+
+        # Wait 60 seconds, but can be interrupted immediately
+        stop_event.wait(60)
+
+
+if __name__ == "__main__":
+    try:
+        thread = threading.Thread(target=camera_checker_loop)
+        thread.start()
+        thread.join()
+
+    except KeyboardInterrupt:
+        print("\nStopping camera checker...")
+        stop_event.set()
+        thread.join()
+
+        print("Camera checker stopped.")

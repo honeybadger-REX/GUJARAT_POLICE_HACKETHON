@@ -1,6 +1,7 @@
 from .connection import get_db
 import mysql.connector
 import mysql.connector.errors
+import sqlite3
 import httpx
 import subprocess
 from fastapi import APIRouter
@@ -16,14 +17,15 @@ MEDIAMTX_WEBRTC = "http://127.0.0.1:8889"
 #------------------------------
 
 
-
-async def update_statues(camera_id: int,statues : str):
+def update_statues(camera_id: int,statues : str):
     conn = get_db()
     cursor = conn.cursor()
     try: 
-        cursor.execute(""" UPDATE camera SET enable = "ONLINE" where CameraID = %s """,(camera_id,statues))
-        
-        rows = cursor.fetchall()
+       sql = """UPDATE camera SET enable = %s WHERE CameraID = %s"""
+       value = (statues, camera_id)
+
+       cursor.execute(sql, value)
+       conn.commit()
     finally: 
         cursor.close()
         conn.close()
@@ -67,8 +69,15 @@ def remove_camera(camera_id:int):
        conn = get_db()
        cursor = conn.cursor()
        try:
-            cursor.exicute(""" DELECT FROM camera WHERE Camera_id = %s""",(camera_id,))
+            cursor.execute(""" DELETE FROM camera WHERE CameraID = %s""",(camera_id,))
             rows = cursor.fetchall()
+            conn.commit()
+
+       except mysql.connector.Error as e:
+        conn.rollback()
+        print(f"Database error: {e}")
+        return False
+       
        finally:
             cursor.close()
             conn.close()
@@ -88,7 +97,7 @@ def add_camera(vendor_id: int):
      camera_name =  []
      values = []
      try:
-          cursor.exicute("""SELECT VendorID , NUMBER_CAM,URL from vendor where VendorID = %S""",(vendor_id,))
+          cursor.execute("""SELECT VendorID , NUMBER_CAM,URL from vendor where VendorID = %s""",(vendor_id,))
           vendor = cursor.fetchone()
           if not vendor:
                return "vendor id not found"
@@ -101,40 +110,60 @@ def add_camera(vendor_id: int):
 
                
           try:  
-                     sql = """INSEART INTO camera values (CameraName,VendorID,CameraURL,enable) """
+                     sql = """ INSERT INTO camera (CameraName, VendorID, CameraURL, enable)VALUES (%s, %s, %s, %s)"""
                      
                      for  url , name in zip(camera_url , camera_name):
-                          values.append([name,vendor_id,url,"CHECHINK"]) 
-                     cursor.execute(sql,values)
+                          values.append([name,vendor_id,url,True]) 
+                     cursor.executemany(sql, values)
 
-          except sqlite3.IntegrityError as e:
-               # Duplicate key, NOT NULL violation, foreign key failure
-                      conn.rollback()
-                      print(f"Integrity error: {e}")
-                      return False
-          except sqlite3.DataError as e:
-               # Wrong data type or value too long
-                      conn.rollback()
-                      print(f"Data error: {e}")
-                      return False
-          except sqlite3.OperationalError as e:
-               # Connection lost, disk full, etc.
-                      conn.rollback()
-                      print(f"Operational error: {e}")
-                      return False
-          except sqlite3.Error as e:
-        # Catch-all for other DB errors
-                      conn.rollback()
-                      print(f"Database error: {e}")
-                      return False
+                     conn.commit()
+
+          except mysql.connector.Error as e:
+               conn.rollback()
+               print(f"Database error: {e}")
+               return False
+
      finally:
-            cursor.close()
-            conn.close()
-    
+        cursor.close()
+        conn.close()
+
      return {
-           "message":"new  cam  added",
-           "number_of_cam": len(camera_url),
-           "cam_name" : camera_name
-      }   
-            
+        "message": "new cam added",
+        "number_of_cam": len(camera_url),
+        "cam_name": camera_name
+    }
+
+
+
+
+    
+# One important thing about your camera checker
+
+# This function inserts the cameras with:
+
+# enable = True
+
+# Then your background checker changes enable to:
+
+# ONLINE
+# OFFLINE
+
+# So you should decide what enable means.
+
+# If enable is supposed to mean camera status, then inserting True is not ideal. Better would be:
+
+# "UNKNOWN"
+
+# initially:
+
+# values.append(
+#     [f"cam{i:02d}", vendor_id, cam_url, "UNKNOWN"]
+# )
+
+# Then your checker changes:
+
+# UNKNOWN → ONLINE
+# UNKNOWN → OFFLINE
+
+# That gives you a clean meaning for the column.
 
