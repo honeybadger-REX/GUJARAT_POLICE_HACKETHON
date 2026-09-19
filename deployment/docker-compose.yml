@@ -1,0 +1,54 @@
+services:
+  mediamtx:
+    build:
+      context: ..
+      dockerfile: deployment/docker/mediamtx.Dockerfile
+    container_name: gujarat_police_mediamtx
+    restart: unless-stopped
+    ports:
+      - "8554:8554"
+      - "8000:8000/udp"
+      - "8001:8001/udp"
+      - "1935:1935"
+      - "8888:8888"
+      - "8889:8889"
+      - "8189:8189/udp"
+      - "8890:8890/udp"
+      - "8892:8892"
+      - "8892:8892/udp"
+      - "8893:8893/udp"
+      - "9997:9997"
+
+      
+  database:
+    image: mysql:8.0
+    container_name: gujarat_police_database
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: gujarat_police
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ../..//database/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ..
+      dockerfile: deployment/docker/backend.Dockerfile
+    container_name: gujarat_police_backend
+    environment:
+      DB_HOST: database
+      DB_USER: root
+      DB_PASSWORD: root
+      DB_NAME: gujarat_police
+    ports:
+      - "8000:8000"
+    depends_on:
+      - database
+    restart: unless-stopped
+
+volumes:
+  mysql_data:
+
+   

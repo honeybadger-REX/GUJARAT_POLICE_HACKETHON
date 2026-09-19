@@ -1,0 +1,29 @@
+CREATE DATABASE IF NOT EXISTS gujarat_police;
+
+USE gujarat_police;
+
+CREATE TABLE IF NOT EXISTS vendor (
+    VendorID INT NOT NULL AUTO_INCREMENT,
+    VendorName VARCHAR(255) NOT NULL,
+    NUMBER_CAM INT NOT NULL,
+    URL VARCHAR(2083) NOT NULL,
+    enable VARCHAR(255) NOT NULL,
+    PRIMARY KEY (VendorID)
+) ENGINE=InnoDB
+  DEFAULT CHARSET=utf8mb4
+  COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE IF NOT EXISTS camera (
+    CameraID INT NOT NULL AUTO_INCREMENT,
+    CameraName VARCHAR(255) DEFAULT NULL,
+    VendorID INT DEFAULT NULL,
+    CameraURL VARCHAR(2083) DEFAULT NULL,
+    enable VARCHAR(255) DEFAULT NULL,
+    PRIMARY KEY (CameraID),
+    KEY VendorID (VendorID),
+    CONSTRAINT camera_ibfk_1
+        FOREIGN KEY (VendorID)
+        REFERENCES vendor (VendorID)
+) ENGINE=InnoDB
+  DEFAULT CHARSET=utf8mb4
+  COLLATE=utf8mb4_0900_ai_ci;

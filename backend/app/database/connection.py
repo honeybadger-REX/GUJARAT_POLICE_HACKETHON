@@ -1,12 +1,11 @@
+import os
 import mysql.connector
- 
- 
+
+
 def get_db():
-    """New connection per call — never share one connection across requests."""
     return mysql.connector.connect(
-        host="localhost",
-        user="root",
-        password="root",
-        database="gujarat_police"
+        host=os.getenv("DB_HOST", "localhost"),
+        user=os.getenv("DB_USER", "root"),
+        password=os.getenv("DB_PASSWORD", "root"),
+        database=os.getenv("DB_NAME", "gujarat_police")
     )
- 

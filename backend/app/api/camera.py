@@ -5,7 +5,8 @@ from pydantic import BaseModel
 from fastapi import APIRouter
 import asyncio
 from ..database import camera_repository
-MEDIAMTX_API = "http://127.0.0.1:9997"
+
+MEDIAMTX_API = "http://gujarat_police_mediamtx:9997"
 MEDIAMTX_WEBRTC = "http://127.0.0.1:8889"  # browser-facing WebRTC player (MediaMTX serves this itself)
 
 router = APIRouter()

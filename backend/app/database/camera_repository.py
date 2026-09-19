@@ -9,7 +9,7 @@ from fastapi import APIRouter
 from concurrent.futures import ThreadPoolExecutor
 import pandas as pd
 
-MEDIAMTX_API = "http://127.0.0.1:9997"
+MEDIAMTX_API = "http://gujarat_police_mediamtx:9997"
 MEDIAMTX_WEBRTC = "http://127.0.0.1:8889"
 
 #-------------------------------------
@@ -102,9 +102,9 @@ def add_camera(vendor_id: int):
           if not vendor:
                return "vendor id not found"
           
-          BASE_URL = vendor[2]
+          BASE_URL = vendor[2].strip('"')
           for i in range(vendor[1]):
-               cam_url = f"{BASE_URL}{i:02d}"
+               cam_url = f"{BASE_URL}{i+1:02d}"
                camera_name.append(f"cam{i:02d}")
                camera_url.append(cam_url) 
 

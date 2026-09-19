@@ -1,0 +1,8 @@
+# Local AI/streaming binaries
+ai/ffmpeg-master-latest-win64-gpl/
+streaming/mediamtx_v1.21.0_windows_amd64/mediamtx.exe
+
+# Python
+.venv/
+__pycache__/
+*.pyc

@@ -19,9 +19,16 @@ app = FastAPI(
 
 # CORS lives here once, at the app level — not duplicated inside
 # camera.py / vendor.py (they no longer create their own FastAPI() app).
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://127.0.0.1:3000", "http://127.0.0.1:5500", "null"],
+    allow_origins=[
+        "http://127.0.0.1:3000",
+        "http://localhost:3000",
+        "http://127.0.0.1:5500",
+        "http://localhost:5500",
+        "null",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
