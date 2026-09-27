@@ -1,14 +1,30 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from contextlib import asynccontextmanager
+import httpx
 
 # NOTE: event.py, health.py and stream.py must exist in backend/app/api/
 # (even as minimal stub routers) or this import will crash on startup.
 # They weren't in your upload — add them or comment these two lines out.
-from backend.app.api.event import router as event_router
-from backend.app.api.health import router as health_router
-from backend.app.api.stream import router as stream_router
-from backend.app.api.vendor import router as vendor_router
-from backend.app.api.camera import router as camera_router
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+
+    # -----------------------------
+    # STARTUP
+    # -----------------------------
+    print("Creating reusable MediaMTX HTTP client...")
+
+    app.state.mediamtx_client = httpx.AsyncClient()
+
+    yield
+
+    # -----------------------------
+    # SHUTDOWN
+    # -----------------------------
+    print("Closing MediaMTX HTTP client...")
+
+    await app.state.mediamtx_client.aclose()
 
 
 app = FastAPI(
@@ -16,6 +32,17 @@ app = FastAPI(
     description="Backend API for camera, vendor, stream and event management",
     version="1.0.0",
 )
+
+
+
+
+from backend.app.api.event import router as event_router
+from backend.app.api.health import router as health_router
+from backend.app.api.stream import router as stream_router
+from backend.app.api.vendor import router as vendor_router
+from backend.app.api.camera import router as camera_router
+
+
 
 # CORS lives here once, at the app level — not duplicated inside
 # camera.py / vendor.py (they no longer create their own FastAPI() app).

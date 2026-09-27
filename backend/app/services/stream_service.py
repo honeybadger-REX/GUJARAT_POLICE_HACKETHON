@@ -9,14 +9,13 @@ MEDIAMTX_WEBRTC = "http://127.0.0.1:8889"  # browser-facing WebRTC player (Media
 
 router = APIRouter()
 
-
+pool = {}
 
 #----------------------------------
 # VENDOR START 
 #----------------------------------
 
-
-async def start_camera(camera_id: int):
+async def start_camera(camera_id: int, client: httpx.AsyncClient):
     conn = get_db()
     cursor = conn.cursor()
     try:
@@ -35,17 +34,19 @@ async def start_camera(camera_id: int):
     camera_name = camera[0]
     camera_url = camera[1]
     stream_name = camera_name.lower()
+    temp = []
+    pool[camera_id]={"name":camera_name,"url":camera_url,"stream":stream_name}
 
     mediamtx_data = {
         "source": camera_url,
         "rtspTransport": "tcp"
     }
 
-    async with httpx.AsyncClient() as client:
+ 
         # Idempotent-ish: if the path already exists, MediaMTX returns
         # an error here (see guide's troubleshooting table, "Path already
         # exists"). Treat that case as success instead of failing the request.
-        response = await client.post(
+    response = await client.post(
             f"{MEDIAMTX_API}/v3/config/paths/add/{stream_name}",
             json=mediamtx_data
         )
@@ -73,24 +74,36 @@ async def start_camera(camera_id: int):
 
 
 
+
 def get_camera_stream(camera_id: int):
-    conn = get_db()
-    cursor = conn.cursor()
-    try:
-        cursor.execute(
-            "SELECT CameraName FROM camera WHERE CameraID = %s",
-            (camera_id,)
-        )
-        camera = cursor.fetchone()
-    finally:
-        cursor.close()
-        conn.close()
 
-    if camera is None:
-        return {"message": "Camera not found"}
+    if camera_id in pool:
 
-    camera_name = camera[0]
-    stream_name = camera_name.lower()
+        camera_name = pool[camera_id]["name"]
+        stream_name = pool[camera_id]["stream"]
+
+    else:
+
+        conn = get_db()
+        cursor = conn.cursor()
+
+        try:
+            cursor.execute(
+                "SELECT CameraName FROM camera WHERE CameraID = %s",
+                (camera_id,)
+            )
+
+            camera = cursor.fetchone()
+
+        finally:
+            cursor.close()
+            conn.close()
+
+        if camera is None:
+            return {"message": "Camera not found"}
+
+        camera_name = camera[0]
+        stream_name = camera_name.lower()
 
     return {
         "camera_id": camera_id,
@@ -100,14 +113,12 @@ def get_camera_stream(camera_id: int):
         "webrtc_url": f"{MEDIAMTX_WEBRTC}/{stream_name}/"
     }
 
-
 #-----------------------------------------
 #  VENDOR STOP
 #---------------------------------------
 
 
-
-async def stop_camera(camera_id: int):
+async def stop_camera(camera_id: int, client: httpx.AsyncClient):
     conn = get_db()
     cursor = conn.cursor()
     try:
@@ -126,8 +137,8 @@ async def stop_camera(camera_id: int):
     camera_name = camera[0]
     stream_name = camera_name.lower()
 
-    async with httpx.AsyncClient() as client:
-        response = await client.delete(
+  
+    response = await client.delete(
             f"{MEDIAMTX_API}/v3/config/paths/delete/{stream_name}"
         )
 
