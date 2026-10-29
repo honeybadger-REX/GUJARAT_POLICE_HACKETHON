@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Sign in — Gujarat Police Camera Monitoring</title>
+<script src="auth.js"></script>
+<style>
+    :root {
+        --bg: #0a0d12; --panel: #12161d; --border: #262d3a;
+        --text: #e6edf3; --muted: #7d8899;
+        --green: #3fb950; --red: #f85149; --blue: #58a6ff;
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; }
+    body {
+        font-family: -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+        background: var(--bg); color: var(--text);
+        display: flex; align-items: center; justify-content: center;
+    }
+    .card {
+        width: 360px; background: var(--panel); border: 1px solid var(--border);
+        border-radius: 10px; padding: 28px;
+    }
+    .force { font-size: 11px; letter-spacing: 0.12em; color: var(--muted); }
+    .title { font-size: 18px; font-weight: 700; margin: 2px 0 22px; }
+    .field { display: flex; flex-direction: column; gap: 5px; margin-bottom: 14px; }
+    .field label { font-size: 11px; color: var(--muted); }
+    input {
+        background: var(--bg); border: 1px solid var(--border); color: var(--text);
+        padding: 10px 11px; border-radius: 6px; font-size: 14px; width: 100%;
+    }
+    input:focus { outline: none; border-color: var(--blue); }
+    button {
+        width: 100%; margin-top: 6px; padding: 11px; border: none; border-radius: 6px;
+        background: var(--blue); color: #041224; font-size: 14px; font-weight: 700; cursor: pointer;
+    }
+    button:hover { opacity: 0.88; }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    .msg { font-size: 12px; min-height: 16px; margin-top: 12px; color: var(--red); }
+</style>
+</head>
+<body>
+
+<form class="card" id="login-form" autocomplete="on">
+    <div class="force">GUJARAT POLICE</div>
+    <div class="title">Camera Monitoring — Sign in</div>
+
+    <div class="field">
+        <label for="username">Username</label>
+        <input id="username" name="username" autocomplete="username" required autofocus>
+    </div>
+    <div class="field">
+        <label for="password">Password</label>
+        <input id="password" name="password" type="password" autocomplete="current-password" required>
+    </div>
+
+    <button type="submit" id="submit-btn">Sign in</button>
+    <div class="msg" id="msg"></div>
+</form>
+
+<script>
+    // Already signed in -> skip the form.
+    if (AUTH.getSession()) location.replace(AUTH.HOME_PAGE);
+
+    // Message passed from logout / session expiry (shown as plain text, never as HTML).
+    const passedMsg = new URLSearchParams(location.search).get("msg");
+    if (passedMsg) document.getElementById("msg").textContent = passedMsg;
+
+    document.getElementById("login-form").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const btn = document.getElementById("submit-btn");
+        const msg = document.getElementById("msg");
+        const username = document.getElementById("username").value.trim();
+        const password = document.getElementById("password").value;
+
+        if (!username || !password) {
+            msg.textContent = "Enter your username and password.";
+            return;
+        }
+
+        btn.disabled = true;
+        btn.textContent = "Signing in…";
+        msg.textContent = "";
+
+        const result = await AUTH.login(username, password);
+
+        if (result.ok) {
+            location.replace(AUTH.HOME_PAGE);
+        } else {
+            msg.textContent = result.message;
+            document.getElementById("password").value = "";
+            btn.disabled = false;
+            btn.textContent = "Sign in";
+        }
+    });
+</script>
+
+</body>
+</html>

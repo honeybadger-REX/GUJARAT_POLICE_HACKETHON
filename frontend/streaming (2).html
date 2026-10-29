@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<script src="auth.js" data-roles="admin,user"></script>
+<title>Gujarat Police — Live Camera Monitoring</title>
+<style>
+    :root {
+        --bg: #0a0d12; --panel: #12161d; --panel-2: #171c25; --border: #262d3a;
+        --text: #e6edf3; --muted: #7d8899; --muted-2: #565f6e;
+        --green: #3fb950; --red: #f85149; --amber: #d29922; --blue: #58a6ff;
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; }
+    body {
+        font-family: -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+        background: var(--bg); color: var(--text);
+        display: flex; flex-direction: column; overflow: hidden;
+    }
+    .shell { flex: 1; display: flex; min-height: 0; }
+
+    /* ---------------- SIDEBAR ---------------- */
+    .sidebar {
+        width: 220px; flex-shrink: 0; background: var(--panel);
+        border-right: 1px solid var(--border);
+        display: flex; flex-direction: column; height: 100%;
+    }
+    .sidebar-head { padding: 16px 14px 10px; border-bottom: 1px solid var(--border); }
+    .sidebar-head h4 { margin: 0 0 10px; font-size: 11px; letter-spacing: 0.08em; color: var(--muted); }
+    .search-box {
+        width: 100%; background: var(--bg); border: 1px solid var(--border);
+        color: var(--text); padding: 7px 9px; border-radius: 6px; font-size: 12px;
+    }
+    .search-box:focus { outline: none; border-color: var(--blue); }
+    .range-list { flex: 1; overflow-y: auto; padding: 8px; }
+    .range-item {
+        display: flex; align-items: center; gap: 8px;
+        padding: 8px 10px; border-radius: 6px; font-size: 13px;
+        color: var(--muted); cursor: pointer; user-select: none;
+    }
+    .range-item:hover { background: var(--panel-2); }
+    .range-item.active { background: #1c2530; color: var(--text); }
+    .range-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--muted-2); flex-shrink: 0; }
+    .range-item.active .range-dot { background: var(--blue); }
+
+    /* ---------------- MAIN ---------------- */
+    .main { flex: 1; display: flex; flex-direction: column; height: 100%; min-width: 0; }
+
+    header {
+        background: var(--panel); border-bottom: 1px solid var(--border);
+        padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;
+    }
+    .brand { display: flex; flex-direction: column; }
+    .brand .force { font-size: 11px; letter-spacing: 0.12em; color: var(--muted); }
+    .brand .title { font-size: 17px; font-weight: 700; letter-spacing: 0.02em; }
+    .header-mid { display: flex; align-items: center; gap: 18px; }
+    .sys-status { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); }
+    .sys-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); box-shadow: 0 0 6px var(--green); }
+    .range-label { font-size: 12px; color: var(--muted); }
+    .header-actions { display: flex; gap: 8px; }
+    button {
+        border: none; border-radius: 6px; font-size: 12px; font-weight: 600;
+        cursor: pointer; padding: 8px 14px; transition: opacity 0.15s;
+    }
+    button:hover { opacity: 0.85; }
+    button:disabled { opacity: 0.35; cursor: not-allowed; }
+    .btn-start-all { background: var(--green); color: #04150a; }
+    .btn-stop-all { background: var(--red); color: #2b0705; }
+
+    .grid-wrap { flex: 1; overflow-y: auto; padding: 20px 24px; }
+    .grid {
+        display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px;
+    }
+
+    /* ---------------- CAMERA CARD ---------------- */
+    .cam-card { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+    .cam-head { display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; border-bottom: 1px solid var(--border); }
+    .cam-head .cam-id { font-size: 11px; color: var(--muted-2); }
+    .cam-head .cam-name { font-size: 13px; font-weight: 600; }
+    .cam-video {
+        width: 100%; aspect-ratio: 16/9; background: #000;
+        display: flex; align-items: center; justify-content: center; position: relative;
+    }
+    .cam-video iframe { width: 100%; height: 100%; border: none; }
+    .cam-video .placeholder { color: #2a2f38; font-size: 11px; letter-spacing: 0.05em; }
+
+    .cam-status { padding: 8px 12px; font-size: 11px; display: flex; align-items: center; gap: 6px; border-bottom: 1px solid var(--border); }
+    .status-dot { width: 7px; height: 7px; border-radius: 50%; }
+    .st-live .status-dot { background: var(--green); box-shadow: 0 0 5px var(--green); }
+    .st-connecting .status-dot { background: var(--amber); }
+    .st-idle .status-dot { background: var(--muted-2); }
+    .st-error .status-dot { background: var(--red); }
+    .st-live { color: var(--green); }
+    .st-connecting { color: var(--amber); }
+    .st-idle { color: var(--muted); }
+    .st-error { color: var(--red); }
+
+    .sub-status { padding: 6px 12px 10px; font-size: 10.5px; color: var(--muted-2); line-height: 1.6; border-bottom: 1px solid var(--border); }
+    .sub-status b { color: var(--muted); font-weight: 600; }
+    .sub-dot { display: inline-block; width: 5px; height: 5px; border-radius: 50%; margin-right: 4px; }
+    .sub-on { background: var(--green); }
+    .sub-off { background: var(--muted-2); }
+
+    .cam-actions { display: flex; gap: 6px; padding: 10px 12px; }
+    .cam-actions button { flex: 1; padding: 7px 0; font-size: 11px; }
+    .btn-cam-start { background: #12351b; color: var(--green); }
+    .btn-cam-stop { background: #2a1f0d; color: var(--amber); }
+    .btn-cam-delete { background: #2b1213; color: var(--red); }
+
+    .empty { color: var(--muted); text-align: center; padding: 60px; font-size: 13px; }
+</style>
+</head>
+<body>
+
+<div class="shell">
+<!-- ========================= SIDEBAR ========================= -->
+<div class="sidebar">
+    <div class="sidebar-head">
+        <h4>CAMERA INDEX</h4>
+        <input class="search-box" id="search-box" placeholder="Search ID or name…" onkeydown="if(event.key==='Enter') searchCamera()">
+    </div>
+    <div class="range-list" id="range-list"></div>
+</div>
+
+<!-- ========================= MAIN ========================= -->
+<div class="main">
+    <header>
+        <div class="brand">
+            <div class="force">GUJARAT POLICE</div>
+            <div class="title">LIVE CAMERA MONITORING</div>
+        </div>
+        <div class="header-mid">
+            <div class="sys-status"><span class="sys-dot"></span> SYSTEM ONLINE</div>
+            <div class="range-label" id="range-label">Cameras —</div>
+        </div>
+        <div class="header-actions">
+            <button class="btn-start-all" onclick="startAllCameras()">▶ START STREAMING</button>
+            <button class="btn-stop-all" onclick="stopAllCameras()">■ STOP STREAMING</button>
+        </div>
+    </header>
+
+    <div class="grid-wrap">
+        <div class="grid" id="grid"></div>
+        <div class="empty" id="empty-msg" style="display:none;">No cameras in this range.</div>
+    </div>
+</div>
+
+</div><!-- /shell -->
+
+<script>
+const CAMERA_API = "http://127.0.0.1:8000/api/camera";
+const STREAM_API = "http://127.0.0.1:8000/api/streams";
+const RANGE_SIZE = 20; // change this one number to resize every range
+
+let allCameras = [];          // fetched once, sliced in memory per range — no refetch on range switch
+let currentRangeStart = 0;
+let webrtcUrls = {};          // camera ID -> last known webrtc_url, so Start doesn't always need a fresh backend call
+let camStatus = {};           // camera ID -> "idle" | "connecting" | "live" | "error" — system-wide, survives range switches
+let hideTimer = null;
+
+// ============================================================
+// LOAD + RANGE NAVIGATION
+// ============================================================
+async function fetchAllCameras() {
+    const response = await AUTH.apiFetch(`${CAMERA_API}/`);
+    const data = await response.json();
+    allCameras = data.Camera_list || [];
+}
+
+function buildRanges() {
+    const ranges = [];
+    for (let start = 0; start < allCameras.length; start += RANGE_SIZE) {
+        ranges.push([start, Math.min(start + RANGE_SIZE, allCameras.length)]);
+    }
+    if (ranges.length === 0) ranges.push([0, 0]);
+    return ranges;
+}
+
+function renderSidebar() {
+    const ranges = buildRanges();
+    const list = document.getElementById("range-list");
+
+    list.innerHTML = ranges.map(([start, end]) => {
+        const isActive = start === currentRangeStart;
+        const label = end === 0 ? "No cameras" : `${start + 1} — ${end}`;
+        return `
+            <div class="range-item ${isActive ? "active" : ""}" onclick="loadCameraRange(${start}, ${start + RANGE_SIZE})">
+                <span class="range-dot"></span>${label}
+            </div>
+        `;
+    }).join("");
+}
+
+// Switching ranges does NOT disconnect anything — "live" is now a system-wide
+// state (camStatus), not a per-range one. A camera started via Start All stays
+// marked live even while you're looking at a different range, and its card
+// reconnects automatically (iframe re-created) the moment you scroll back to it.
+// The actual DOM <iframe> for off-screen cameras is destroyed when the grid
+// re-renders (that's what keeps this fast at 1,000+ cameras) — only the
+// lightweight status flag persists, not a live video element.
+function loadCameraRange(start, end) {
+    currentRangeStart = start;
+    renderSidebar();
+    renderGrid();
+
+    const slice = allCameras.slice(start, end);
+    const label = slice.length === 0 ? "No cameras" : `Cameras ${start + 1}–${start + slice.length}`;
+    document.getElementById("range-label").innerText = label;
+}
+
+function searchCamera() {
+    const query = document.getElementById("search-box").value.trim().toLowerCase();
+    if (!query) return;
+
+    const index = allCameras.findIndex(c =>
+        String(c.CameraID) === query || (c.CameraName || "").toLowerCase().includes(query)
+    );
+
+    if (index === -1) {
+        alert("No camera matched that ID or name.");
+        return;
+    }
+
+    const rangeStart = Math.floor(index / RANGE_SIZE) * RANGE_SIZE;
+    loadCameraRange(rangeStart, rangeStart + RANGE_SIZE);
+}
+
+// ============================================================
+// RENDERING
+// ============================================================
+function renderGrid() {
+    const grid = document.getElementById("grid");
+    const emptyMsg = document.getElementById("empty-msg");
+    const slice = allCameras.slice(currentRangeStart, currentRangeStart + RANGE_SIZE);
+
+    if (slice.length === 0) {
+        grid.innerHTML = "";
+        emptyMsg.style.display = "block";
+        return;
+    }
+    emptyMsg.style.display = "none";
+    grid.innerHTML = slice.map(cameraCardHtml).join("");
+}
+
+function cameraCardHtml(camera) {
+    const id = camera.CameraID;
+    const status = camStatus[id] || "idle";
+    const statusMeta = {
+        idle:       { cls: "st-idle",       label: "○ NOT VIEWING" },
+        connecting: { cls: "st-connecting", label: "◌ CONNECTING" },
+        live:       { cls: "st-live",       label: "● LIVE" },
+        error:      { cls: "st-error",      label: "⚠ ERROR" }
+    }[status];
+
+    const sourceOn = String(camera.enable) === "true";
+    const videoContent = (status === "live" && webrtcUrls[id])
+        ? `<iframe src="${AUTH.esc(webrtcUrls[id])}"></iframe>`
+        : `<span class="placeholder">NO SIGNAL</span>`;
+
+    return `
+        <div class="cam-card" id="cam-${id}">
+            <div class="cam-head">
+                <span class="cam-name">${AUTH.esc(camera.CameraName)}</span>
+                <span class="cam-id">ID ${AUTH.esc(id)}</span>
+            </div>
+            <div class="cam-video" id="video-${id}">${videoContent}</div>
+            <div class="cam-status ${statusMeta.cls}" id="status-${id}">
+                <span class="status-dot"></span>${statusMeta.label}
+            </div>
+            <div class="sub-status">
+                <span class="sub-dot ${sourceOn ? "sub-on" : "sub-off"}"></span><b>Source:</b> ${sourceOn ? "Connected" : "Offline"}<br>
+                <span class="sub-dot ${sourceOn ? "sub-on" : "sub-off"}"></span><b>AI:</b> ${sourceOn ? "Processing" : "Idle"}<br>
+                <span class="sub-dot ${status === "live" ? "sub-on" : "sub-off"}"></span><b>Browser:</b> ${status === "live" ? "Viewing" : "Not Viewing"}
+            </div>
+            <div class="cam-actions">
+                <button class="btn-cam-start" onclick="startCamera(${id})">▶ Start</button>
+                <button class="btn-cam-stop" onclick="stopCamera(${id})">■ Stop</button>
+                ${AUTH.isAdmin() ? `<button class="btn-cam-delete" onclick="deleteCamera(${id})">🗑 Delete</button>` : ""}
+            </div>
+        </div>
+    `;
+}
+
+function setCardStatus(id, status) {
+    camStatus[id] = status;
+    const card = document.getElementById(`cam-${id}`);
+    if (!card) return; // card scrolled out of the current range — nothing to update
+    card.outerHTML = cameraCardHtml(allCameras.find(c => c.CameraID === id));
+}
+
+// ============================================================
+// BROWSER VIEWING — Start/Stop only ever touch the browser side.
+// Stop NEVER calls the backend "stop stream" endpoint, since that
+// deletes the MediaMTX path and would kill the source + AI feed too.
+// ============================================================
+async function startCamera(cameraId) {
+    setCardStatus(cameraId, "connecting");
+
+    try {
+        const response = await AUTH.apiFetch(`${STREAM_API}/camera/${cameraId}/start`, { method: "POST" });
+        const data = await response.json();
+        const url = data.steaming_cam && data.steaming_cam.webrtc_url;
+
+        if (response.ok && url) {
+            webrtcUrls[cameraId] = url;
+            connectWebRTC(cameraId);
+        } else {
+            setCardStatus(cameraId, "error");
+        }
+    } catch (e) {
+        setCardStatus(cameraId, "error");
+    }
+}
+
+function connectWebRTC(cameraId) {
+    setCardStatus(cameraId, "live");
+}
+
+// Browser-only disconnect — no backend call, on purpose.
+function stopCamera(cameraId) {
+    disconnectWebRTC(cameraId);
+}
+
+function disconnectWebRTC(cameraId) {
+    setCardStatus(cameraId, "idle");
+}
+
+// Runs startCamera for EVERY camera in the system, not just the visible range —
+// batched so 1,000 cameras doesn't mean 1,000 simultaneous requests at once.
+const START_ALL_BATCH_SIZE = 20;
+
+async function startAllCameras() {
+    const toStart = allCameras.filter(c => camStatus[c.CameraID] !== "live");
+
+    for (let i = 0; i < toStart.length; i += START_ALL_BATCH_SIZE) {
+        const batch = toStart.slice(i, i + START_ALL_BATCH_SIZE);
+        await Promise.all(batch.map(c => startCamera(c.CameraID)));
+    }
+}
+
+// Stops browser viewing for EVERY camera currently marked live, system-wide —
+// not just the ones in the visible range. Still browser-only: no backend call.
+function stopAllCameras() {
+    const liveIds = Object.keys(camStatus).filter(id => camStatus[id] === "live").map(Number);
+    for (const camId of liveIds) {
+        stopCamera(camId);
+    }
+}
+
+// ============================================================
+// DELETE — the one action that actually touches the camera record.
+// ============================================================
+async function deleteCamera(cameraId) {
+    if (!AUTH.isAdmin()) return;   // UI guard only — the backend must enforce this too
+    const camera = allCameras.find(c => c.CameraID === cameraId);
+    const confirmed = confirm(
+        `Delete Camera ${cameraId}${camera ? " (" + camera.CameraName + ")" : ""}?\n\n` +
+        `This will remove the camera from the system.`
+    );
+    if (!confirmed) return;
+
+    disconnectWebRTC(cameraId); // stop showing it in the browser first
+
+    // Actually kill the stream at the source: this deletes the MediaMTX path,
+    // unlike Stop, which only ever touches the browser. Best-effort — if the
+    // stream was never started, this just has nothing to stop, so don't let
+    // a failure here block the actual delete below.
+    try {
+        await AUTH.apiFetch(`${STREAM_API}/camera/${cameraId}/stop`, { method: "POST" });
+    } catch (e) {
+        // stream may not have been running — proceed to delete regardless
+    }
+
+    await AUTH.apiFetch(`${CAMERA_API}/camera/remove`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ camID: cameraId })
+    });
+
+    await fetchAllCameras();
+    renderSidebar();
+    renderGrid();
+}
+
+// ============================================================
+// 10-SECOND NAVIGATION SAFETY TIMER
+// Only ever disconnects browser WebRTC — never touches RTSP,
+// MediaMTX paths, AI processing, or deletes anything.
+// ============================================================
+document.addEventListener("visibilitychange", () => {
+    if (document.hidden) {
+        hideTimer = setTimeout(() => {
+            const liveIds = Object.keys(camStatus).filter(id => camStatus[id] === "live").map(Number);
+            for (const camId of liveIds) {
+                disconnectWebRTC(camId);
+            }
+        }, 10000);
+    } else if (hideTimer) {
+        clearTimeout(hideTimer);
+        hideTimer = null;
+    }
+});
+
+// ============================================================
+// INIT
+// ============================================================
+(async function init() {
+    await fetchAllCameras();
+    loadCameraRange(0, RANGE_SIZE);
+})();
+</script>
+
+</body>
+</html>
