@@ -1,4 +1,4 @@
-from .connection import get_db
+from ....database.connection import get_db
 import mysql.connector
 import mysql.connector.errors
 import sqlite3

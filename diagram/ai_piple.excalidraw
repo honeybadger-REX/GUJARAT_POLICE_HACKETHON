@@ -26,7 +26,7 @@
       "version": 46,
       "versionNonce": 1038578600,
       "isDeleted": false,
-      "boundElements": null,
+      "boundElements": [],
       "updated": 1793290458789,
       "link": null,
       "locked": false,
@@ -214,10 +214,7 @@
       ],
       "pressures": [],
       "simulatePressure": true,
-      "lastCommittedPoint": [
-        136.0003662109375,
-        -165.99998474121094
-      ]
+      "lastCommittedPoint": null
     },
     {
       "id": "tqbYOp0b8jxa-zh2XUjmx",
@@ -242,7 +239,7 @@
       "version": 21,
       "versionNonce": 1363425192,
       "isDeleted": false,
-      "boundElements": null,
+      "boundElements": [],
       "updated": 1793290460741,
       "link": null,
       "locked": false,
@@ -330,10 +327,7 @@
       ],
       "pressures": [],
       "simulatePressure": true,
-      "lastCommittedPoint": [
-        432.0001220703125,
-        -374.00001525878906
-      ]
+      "lastCommittedPoint": null
     },
     {
       "id": "_xXBz7HOhPsHy28NSql6T",
@@ -358,7 +352,7 @@
       "version": 9,
       "versionNonce": 472930728,
       "isDeleted": false,
-      "boundElements": null,
+      "boundElements": [],
       "updated": 1793290462160,
       "link": null,
       "locked": false,
@@ -398,10 +392,7 @@
       ],
       "pressures": [],
       "simulatePressure": true,
-      "lastCommittedPoint": [
-        128.00018310546875,
-        618.0001831054688
-      ]
+      "lastCommittedPoint": null
     },
     {
       "id": "QrvqgMr0LFISiybXFawLB",
@@ -426,7 +417,7 @@
       "version": 58,
       "versionNonce": 2065885912,
       "isDeleted": false,
-      "boundElements": null,
+      "boundElements": [],
       "updated": 1793290464010,
       "link": null,
       "locked": false,
@@ -662,10 +653,7 @@
       ],
       "pressures": [],
       "simulatePressure": true,
-      "lastCommittedPoint": [
-        -8.00018310546875,
-        113.99993896484375
-      ]
+      "lastCommittedPoint": null
     },
     {
       "id": "nlQ88JXCJODxkCz1CZNAw",
@@ -690,7 +678,7 @@
       "version": 28,
       "versionNonce": 551957416,
       "isDeleted": false,
-      "boundElements": null,
+      "boundElements": [],
       "updated": 1793290466150,
       "link": null,
       "locked": false,
@@ -806,10 +794,7 @@
       ],
       "pressures": [],
       "simulatePressure": true,
-      "lastCommittedPoint": [
-        120,
-        -557.999572753906
-      ]
+      "lastCommittedPoint": null
     },
     {
       "id": "uSM7sE3lz6pQKQNPd_ug6",
@@ -834,7 +819,7 @@
       "version": 11,
       "versionNonce": 3956904,
       "isDeleted": false,
-      "boundElements": null,
+      "boundElements": [],
       "updated": 1793290468198,
       "link": null,
       "locked": false,
@@ -882,10 +867,7 @@
       ],
       "pressures": [],
       "simulatePressure": true,
-      "lastCommittedPoint": [
-        383.99993896484375,
-        -142.0001220703125
-      ]
+      "lastCommittedPoint": null
     },
     {
       "id": "Zs62joNNkP4eDo0URmjKQ",
@@ -910,7 +892,7 @@
       "version": 3,
       "versionNonce": 198364328,
       "isDeleted": false,
-      "boundElements": null,
+      "boundElements": [],
       "updated": 1793291039989,
       "link": null,
       "locked": false,
@@ -926,10 +908,44 @@
       ],
       "pressures": [],
       "simulatePressure": true,
-      "lastCommittedPoint": [
-        0.0001,
-        0.0001
-      ]
+      "lastCommittedPoint": null
+    },
+    {
+      "id": "TUM9WmbxQb4asfJPIeikS",
+      "type": "text",
+      "x": -407.8584091564717,
+      "y": 208.48124631515043,
+      "width": 326.24766540527344,
+      "height": 25,
+      "angle": 0,
+      "strokeColor": "#1e1e1e",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "strokeStyle": "solid",
+      "roughness": 1,
+      "opacity": 100,
+      "groupIds": [],
+      "frameId": null,
+      "index": "a8",
+      "roundness": null,
+      "seed": 1810977730,
+      "version": 228,
+      "versionNonce": 358698782,
+      "isDeleted": false,
+      "boundElements": null,
+      "updated": 1793449364119,
+      "link": null,
+      "locked": false,
+      "text": "FLsaIN6hMdMQ1D%yRTuX",
+      "fontSize": 20,
+      "fontFamily": 5,
+      "textAlign": "left",
+      "verticalAlign": "top",
+      "containerId": null,
+      "originalText": "FLsaIN6hMdMQ1D%yRTuX",
+      "autoResize": false,
+      "lineHeight": 1.25
     }
   ],
   "appState": {

@@ -1,8 +1,10 @@
 # safety_pipeline.py
 
-from accident_detection import detect_accidents
-from face_detection import detect_faces
-from face_recognition import recognize_face
+from detection.accident_detection import detect_accidents
+from detection.face_detectiona_and_recognition import detect_faces
+from detection.face_detectiona_and_recognition import recognize_face
+
+
 
 
 def safety_pipeline(

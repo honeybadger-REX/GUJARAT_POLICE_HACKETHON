@@ -1,7 +1,9 @@
 import cv2
+from database.frame import frame_storage
 
 
-def filter_frame(frame, size=(640, 640)):
+def filter_frame(frame,came_id ,size=(640, 640)):
+
     # Resize
     frame = cv2.resize(
         frame,
@@ -24,6 +26,7 @@ def filter_frame(frame, size=(640, 640)):
     frame = cv2.merge((l, a, b))
     frame = cv2.cvtColor(frame, cv2.COLOR_LAB2BGR)
 
+
     # Light sharpening
     blurred = cv2.GaussianBlur(frame, (0, 0), 1)
 
@@ -34,7 +37,8 @@ def filter_frame(frame, size=(640, 640)):
         -0.2,
         0
     )
+    frame_id = frame_storage(frame , came_id)
 
-    return frame
+    return frame , came_id , frame_id
 
 

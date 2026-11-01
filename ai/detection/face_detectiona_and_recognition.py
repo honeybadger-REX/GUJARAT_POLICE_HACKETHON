@@ -33,14 +33,14 @@ def detect_faces(frame):
             2
         )
 
-    return frame, faces
+    return frame, faces ,face 
 
 
 
 
 
 
-def recognize_face(face_encoding, known_encodings, known_names, tolerance=0.50):
+def recognize_face(face_encoding, known_encodings, known_names, face,tolerance=0.50):
 
     if len(known_encodings) == 0:
         return "Unknown"
@@ -59,6 +59,6 @@ def recognize_face(face_encoding, known_encodings, known_names, tolerance=0.50):
     best_match = distances.argmin()
 
     if matches[best_match]:
-        return known_names[best_match]
+        return { "face":best_match,"statues":"recognized","face_dimention":face}
 
-    return "Unknown"
+    return  { "face":best_match,"statues":"unknown","face_dimention":face}

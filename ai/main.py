@@ -3,9 +3,9 @@ import asyncio
 
 from concurrent.futures import ThreadPoolExecutor
 
-from filter import filter_frame
-from vehicle_pipeline import vehicle_pipeline
-from safety_pipeline import safety_pipeline
+from pipeline.image_filter import filter_frame
+from pipeline.vehicle import vehicle_pipeline
+from pipeline.safety import safety_pipeline
 
 
 # =================================
@@ -63,7 +63,7 @@ async def run_vehicle(
 # MAIN ASYNC PIPELINE
 # =================================
 
-async def main_pipeline(video_source):
+async def main_pipeline(video_source,camera_id):
 
     cap = cv2.VideoCapture(video_source)
 
@@ -85,7 +85,7 @@ async def main_pipeline(video_source):
         # FILTER
         # --------------------------------
 
-        frame = filter_frame(frame)
+        frame, camera_id , frame_id = filter_frame(frame)
 
 
         # --------------------------------

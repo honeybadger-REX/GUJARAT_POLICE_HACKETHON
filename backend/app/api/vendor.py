@@ -1,7 +1,7 @@
 from fastapi import APIRouter
 from pydantic import BaseModel
 from ..database import vendor_repository  # adjust import path to wherever vendor_repository.py lives
-from ..database import connection  # adjust import path to wherever vendor_repository.py lives
+from ....database import connection  # adjust import path to wherever vendor_repository.py lives
 
 router = APIRouter()
 

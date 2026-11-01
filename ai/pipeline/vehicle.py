@@ -1,20 +1,22 @@
 # vehicle_pipeline.py
 
-from vehicle_detection import detect_vehicles
-from helmet_detection import detect_helmets
-from face_detection import detect_faces
-from face_recognition import recognize_face
+from detection.vehicle_detection import detect_vehicles
+from detection.helmet_detection import detect_helmets
+from detection.face_detectiona_and_recognition import detect_faces
+from detection.face_detectiona_and_recognition import recognize_face
+from database.face import face_storage
+from database.frame import frame_storage
 
 
 def vehicle_pipeline(
     frame,
     known_encodings,
-    known_names
+    known_names,cam_id
 ):
     """
     Process vehicles found in one frame.
     """
-
+  
     # --------------------------------
     # VEHICLE DETECTION
     # --------------------------------
@@ -29,6 +31,7 @@ def vehicle_pipeline(
     for vehicle in vehicles:
 
         vehicle_type = vehicle["class"]
+        
 
 
         # =================================
@@ -39,10 +42,8 @@ def vehicle_pipeline(
 
             x1, y1, x2, y2 = vehicle["bbox"]
 
-            vehicle_crop = frame[
-                y1:y2,
-                x1:x2
-            ]
+            vehicle_crop = vehicle["vehicleframe"]
+            vehical_id = vehicle["vehicale_id"]
 
 
             # --------------------------------
@@ -50,7 +51,7 @@ def vehicle_pipeline(
             # --------------------------------
 
             vehicle_crop, helmet_result = detect_helmets(
-                vehicle_crop
+                vehicle_crop ,vehical_id,cam_id
             )
 
 
@@ -72,23 +73,19 @@ def vehicle_pipeline(
 
             else:
 
-                frame, faces = detect_faces(frame)
+                frame, faces ,face= detect_faces(frame)
 
 
-                for face in faces:
+                for facez in faces:
 
                     name = recognize_face(
-                        face["encoding"],
+                        facez["encoding"],
                         known_encodings,
                         known_names
                     )
+                    face_storage(name)
 
-
-                    record_face(
-                        vehicle=vehicle,
-                        face=face,
-                        name=name
-                    )
+                
 
 
         # =================================
@@ -110,21 +107,3 @@ def vehicle_pipeline(
 # DATABASE FUNCTIONS
 # =================================
 
-def store_vehicle(vehicle, helmet=None):
-
-    print(
-        "STORE VEHICLE:",
-        vehicle,
-        "HELMET:",
-        helmet
-    )
-
-
-def record_face(vehicle, face, name):
-
-    print(
-        "RECORD FACE:",
-        name,
-        "VEHICLE:",
-        vehicle
-    )

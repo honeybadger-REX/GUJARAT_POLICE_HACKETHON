@@ -1,12 +1,13 @@
 import cv2
 from ultralytics import YOLO
+from database.helmet import helmet_store
 
 
 # Load helmet detection model once
 helmet_model = YOLO("helmet_model.pt")
 
 
-def detect_helmets(frame, confidence=0.40):
+def detect_helmets(frame,vehical_id,cam_id, confidence=0.40):
     """
     Detect helmets in a single video frame.
 
@@ -40,6 +41,9 @@ def detect_helmets(frame, confidence=0.40):
 
         helmet = {
             "class": class_name,
+            "vehical_id": vehical_id , 
+            "camera_id": cam_id,
+            "helmetframe": frame[y1:y2 ,x1:x2],
             "confidence": conf,
             "bbox": [
                 int(x1),
@@ -48,6 +52,8 @@ def detect_helmets(frame, confidence=0.40):
                 int(y2)
             ]
         }
+        helmet_id = helmet_store(frame,vehical_id,cam_id)
+        helmet.insert[{"helmet_id":helmet_id}] 
 
         helmets.append(helmet)
 

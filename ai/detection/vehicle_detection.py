@@ -1,12 +1,13 @@
 from ultralytics import YOLO
 import cv2
+from database.vehicles import vehicle_store 
 
 
 # Load model once
 vehicle_model = YOLO("best.pt")
 
 
-def detect_vehicles(frame, confidence=0.40):
+def detect_vehicles(frame,came_id,frame_id, confidence=0.40):
     """
     Detect vehicles in a single video frame.
 
@@ -40,15 +41,20 @@ def detect_vehicles(frame, confidence=0.40):
 
         # Store detection information
         vehicle = {
-            "class": class_name,
-            "confidence": conf,
-            "bbox": [
-                int(x1),
-                int(y1),
-                int(x2),
-                int(y2)
-            ]
-        }
+                            "frame_id": frame_id,
+                            "camera_id": came_id,
+                             "vehicleframe": frame[y1:y2 ,x1:x2],
+                            "class": class_name,
+                            "confidence": conf,
+                            "bbox": [
+                                int(x1),
+                                int(y1),
+                                int(x2),
+                                int(y2)
+                            ]
+                        }
+        vehicale_id, cam_id =  vehicle_store(vehicle)        
+        vehicle.insert[{"vehicale_id":vehicale_id}] 
 
         vehicles.append(vehicle)
 
@@ -61,9 +67,10 @@ def detect_vehicles(frame, confidence=0.40):
             2
         )
 
+        
         # Draw label
         label = f"{class_name} {conf:.2f}"
-
+    
         cv2.putText(
             frame,
             label,
@@ -73,5 +80,6 @@ def detect_vehicles(frame, confidence=0.40):
             (0, 255, 0),
             2
         )
+        
 
-    return frame, vehicles
+    return  vehicles

@@ -15,3 +15,16 @@ db_pool = pooling.MySQLConnectionPool(
 
 def get_db():
     return db_pool.get_connection()
+
+from pymongo import MongoClient
+
+client = MongoClient(
+    "localhost:27017",
+    maxPoolSize=50,
+    minPoolSize=5,
+    maxIdleTimeMS=60000,
+    serverSelectionTimeoutMS=5000
+)
+def get_mongo_db():
+    mogodb =  client["CCTV_ai"]
+    return mogodb
