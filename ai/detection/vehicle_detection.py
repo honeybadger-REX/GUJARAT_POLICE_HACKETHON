@@ -1,6 +1,6 @@
 from ultralytics import YOLO
 import cv2
-from database.vehicles import vehicle_store 
+from database.vehicles import vehicle_store , vehical_idg
 
 
 # Load model once
@@ -26,9 +26,9 @@ def detect_vehicles(frame,came_id,frame_id, confidence=0.40):
     result = results[0]
 
     vehicles = []
-
+    original_frame = frame.copy()
     for box in result.boxes:
-
+        
         # Bounding box
         x1, y1, x2, y2 = box.xyxy[0].tolist()
 
@@ -38,12 +38,12 @@ def detect_vehicles(frame,came_id,frame_id, confidence=0.40):
         # Class
         class_id = int(box.cls[0])
         class_name = vehicle_model.names[class_id]
-
+    
         # Store detection information
         vehicle = {
                             "frame_id": frame_id,
                             "camera_id": came_id,
-                             "vehicleframe": frame[y1:y2 ,x1:x2],
+                            "vehical_id":vehical_idg(),
                             "class": class_name,
                             "confidence": conf,
                             "bbox": [
@@ -51,12 +51,13 @@ def detect_vehicles(frame,came_id,frame_id, confidence=0.40):
                                 int(y1),
                                 int(x2),
                                 int(y2)
-                            ]
+                            ],
+                            "frame":original_frame[y1:y2,x1:x2]
                         }
-        vehicale_id, cam_id =  vehicle_store(vehicle)        
-        vehicle.insert[{"vehicale_id":vehicale_id}] 
 
-        vehicles.append(vehicle)
+
+        
+
 
         # Draw bounding box
         cv2.rectangle(
@@ -70,6 +71,8 @@ def detect_vehicles(frame,came_id,frame_id, confidence=0.40):
         
         # Draw label
         label = f"{class_name} {conf:.2f}"
+        vehicle["frame"] = frame[y1:y2,x1:x2] 
+        vehicles.append(vehicle)
     
         cv2.putText(
             frame,

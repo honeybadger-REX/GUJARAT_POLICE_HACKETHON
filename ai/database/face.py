@@ -8,6 +8,15 @@ from datetime import datetime
 mongo = mongodb["CCTV_face"]
 fs = GridFS(mongo)
 
+def face_idg():
+    result = mongo.counters.find_one_and_update(
+                    {"_id": "face_id"},
+                    {"$inc": {"sequence_value": 1}},
+                    upsert=True,
+                    return_document=True
+                )
+    face_id = result["sequence_value"]
+    return face_id
 
 def face_storage(name, cam_id, vehicle_id):
 

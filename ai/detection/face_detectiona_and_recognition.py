@@ -1,9 +1,10 @@
 import cv2
 import face_recognition
+from database.face import face_idg
 import face_recognition
 
 
-def detect_faces(frame):
+def detect_faces(frame,hemlet_id):
     rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
     locations = face_recognition.face_locations(rgb_frame)
@@ -13,17 +14,23 @@ def detect_faces(frame):
     )
 
     faces = []
-
+    original_frame = frame.copy()
+    
+    
     for location, encoding in zip(locations, encodings):
 
         top, right, bottom, left = location
 
         face = {
             "encoding": encoding,
-            "bbox": [left, top, right, bottom]
+            "bbox": [left, top, right, bottom],
+            "hemlet_id":hemlet_id ,
+            "face_id":face_idg(),
+            "face_frame" : original_frame[left:right, top:bottom]
+
         }
 
-        faces.append(face)
+        
 
         cv2.rectangle(
             frame,
@@ -32,8 +39,10 @@ def detect_faces(frame):
             (255, 0, 0),
             2
         )
+        faces["frame"] = frame
+        faces.append(face)
 
-    return frame, faces ,face 
+    return  faces 
 
 
 
@@ -59,6 +68,6 @@ def recognize_face(face_encoding, known_encodings, known_names, face,tolerance=0
     best_match = distances.argmin()
 
     if matches[best_match]:
-        return { "face":best_match,"statues":"recognized","face_dimention":face}
+        return matches[best_match]
 
-    return  { "face":best_match,"statues":"unknown","face_dimention":face}
+    return "unknown"

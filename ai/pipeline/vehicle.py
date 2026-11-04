@@ -1,109 +1,182 @@
-# vehicle_pipeline.py
-
-from detection.vehicle_detection import detect_vehicles
-from detection.helmet_detection import detect_helmets
-from detection.face_detectiona_and_recognition import detect_faces
-from detection.face_detectiona_and_recognition import recognize_face
-from database.face import face_storage
-from database.frame import frame_storage
+from vehicle_detection import detect_vehicles
+from helmet_detection import detect_helmets
+from face_detectiona_and_recognition import detect_faces, recognize_face
 
 
 def vehicle_pipeline(
     frame,
-    known_encodings,
-    known_names,cam_id
+    camera_id,
+    frame_id,
+    known_encodings=None,
+    known_names=None
 ):
     """
-    Process vehicles found in one frame.
+    Process one frame through the vehicle pipeline.
+
+    Flow:
+        Vehicle Detection
+              ↓
+        2-wheeler?
+          ↓        ↓
+        YES        NO
+         ↓          ↓
+      Helmet      Store vehicle
+         ↓
+    No Helmet?
+      ↓     ↓
+    YES     NO
+     ↓       ↓
+    Face    Store vehicle
+     ↓
+    Recognition
+     ↓
+    Final vehicle result
     """
-  
-    # --------------------------------
-    # VEHICLE DETECTION
-    # --------------------------------
 
-    frame, vehicles = detect_vehicles(frame)
+    # --------------------------------------------------
+    # 1. Detect vehicles
+    # --------------------------------------------------
 
+    frame, vehicles = detect_vehicles(
+        frame,
+        camera_id,
+        frame_id
+    )
 
-    # --------------------------------
-    # PROCESS EACH VEHICLE
-    # --------------------------------
+    final_vehicles = []
+
+    # --------------------------------------------------
+    # 2. Process every detected vehicle
+    # --------------------------------------------------
 
     for vehicle in vehicles:
 
-        vehicle_type = vehicle["class"]
-        
+        vehicle_result = {
+            "camera_id": camera_id,
+            "frame_id": frame_id,
+            "vehicle": {
+                "class": vehicle["class"],
+                "confidence": vehicle["confidence"],
+                "bbox": vehicle["bbox"]
+            },
+            "helmet": None,
+            "face": None,
+            "event": None,
+            "eveidnce":{
+            "vehicle_frame" : frame,
+            "helmet_frame":None,
+            "face_frame":None  
+                                    }
+        }
 
+        # Vehicle bounding box
+        x1, y1, x2, y2 = vehicle["bbox"]
 
-        # =================================
-        # TWO WHEELER
-        # =================================
+        # Crop vehicle from frame
+        vehicle_frame = frame[y1:y2, x1:x2]
 
-        if vehicle_type == "2-wheeler":
+        # --------------------------------------------------
+        # 3. Only check helmet for 2-wheelers
+        # --------------------------------------------------
 
-            x1, y1, x2, y2 = vehicle["bbox"]
+        if vehicle["class"] == "2-wheeler":
 
-            vehicle_crop = vehicle["vehicleframe"]
-            vehical_id = vehicle["vehicale_id"]
-
-
-            # --------------------------------
-            # HELMET DETECTION
-            # --------------------------------
-
-            vehicle_crop, helmet_result = detect_helmets(
-                vehicle_crop ,vehical_id,cam_id
+            helmets = detect_helmets(
+                vehicle_frame,
+                camera_id
             )
 
+            # --------------------------------------------------
+            # 4. Helmet found
+            # --------------------------------------------------
 
-            # --------------------------------
-            # HELMET PRESENT
-            # --------------------------------
+            if len(helmets) > 0:
 
-            if helmet_result:
-
-                store_vehicle(
-                    vehicle=vehicle,
-                    helmet=helmet_result
+                best_helmet = max(
+                    helmets,
+                    key=lambda x: x["confidence"]
                 )
 
+                vehicle_result["helmet"] = {
+                    "detected": True,
+                    "confidence": best_helmet["confidence"],
+                    "bbox": best_helmet["bbox"]
+                }
+                vehicle_result["eveidnce"] = {
+                    "helmet_frame": best_helmet["frame"]
 
-            # --------------------------------
-            # NO HELMET
-            # --------------------------------
+                }
+
+            # --------------------------------------------------
+            # 5. No helmet
+            # --------------------------------------------------
 
             else:
 
-                frame, faces ,face= detect_faces(frame)
+                vehicle_result["helmet"] = {
+                    "detected": False
+                }
+                vehicle_result["eveidnce"] = {
+                "helmet_frame": best_helmet["frame"]}
 
+                # Detect face inside vehicle crop
+                faces = detect_faces(vehicle_frame)
 
-                for facez in faces:
+                if len(faces) > 0:
 
-                    name = recognize_face(
-                        facez["encoding"],
-                        known_encodings,
-                        known_names
-                    )
-                    face_storage(name)
+                    face = faces[0]
 
-                
+                    vehicle_result["face"] = {
+                        "bbox": face["bbox"]
+                    }
+                    vehicle_result["eveidnce"] = {
+                    "face_frame": face["frame"]
+                                                    }
 
+                    # ------------------------------------------
+                    # 6. Face recognition
+                    # ------------------------------------------
 
-        # =================================
-        # THREE / FOUR WHEELER
-        # =================================
+                    if known_encodings and known_names:
 
-        elif vehicle_type in [
-            "3-wheeler",
-            "4-wheeler"
-        ]:
+                        recognition = recognize_face(
+                            face["encoding"],
+                            known_encodings,
+                            known_names
+                        )
 
-            store_vehicle(vehicle)
+                        vehicle_result["face"].update(
+                            recognition
+                        )
 
+                    else:
 
-    return frame
+                        vehicle_result["face"].update({
+                            "person_id": None,
+                            "name": "Unknown",
+                            "status": "unknown"
+                        })
 
+                # ------------------------------------------
+                # 7. Create event
+                # ------------------------------------------
 
-# =================================
-# DATABASE FUNCTIONS
-# =================================
+                vehicle_result["event"] = {
+                    "type": "NO_HELMET"
+                }
 
+        # --------------------------------------------------
+        # 8. Add vehicle result
+        # --------------------------------------------------
+
+        final_vehicles.append(vehicle_result)
+
+    # --------------------------------------------------
+    # 9. Return complete pipeline result
+    # --------------------------------------------------
+
+    return frame, {
+        "camera_id": camera_id,
+        "frame_id": frame_id,
+        "vehicles": final_vehicles
+    }

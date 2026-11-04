@@ -1,5 +1,5 @@
 import cv2
-from database.frame import frame_storage
+from database.frame import frame_storage , frame_idg
 
 
 def filter_frame(frame,came_id ,size=(640, 640)):
@@ -10,7 +10,7 @@ def filter_frame(frame,came_id ,size=(640, 640)):
         size,
         interpolation=cv2.INTER_LANCZOS4
     )
-
+    frame_id = frame_idg()
     # Improve contrast
     lab = cv2.cvtColor(frame, cv2.COLOR_BGR2LAB)
 

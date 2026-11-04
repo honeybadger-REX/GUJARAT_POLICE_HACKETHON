@@ -9,22 +9,26 @@ x = datetime.datetime.now()
 
 mongo = mongodb["CCTV_vehicle"]
 fs = GridFS(mongo)
+def vehical_idg():
+    result = mongo.counters.find_one_and_update(
+                    {"_id": "vehicale_id"},
+                    {"$inc": {"sequence_value": 1}},
+                    upsert=True,
+                    return_document=True
+                )
+    vehicle_id = result["sequence_value"]
+    return vehicle_id
 
 
 def vehicle_storage(dicts):
 
     # Generate auto-increment frame ID
-    result = mongo.counters.find_one_and_update(
-        {"_id": "vehicale_id"},
-        {"$inc": {"sequence_value": 1}},
-        upsert=True,
-        return_document=True
-    )
+   
     year = x.strftime("%Y")
     month = x.strftime("%b")
     time = x.strftime("/H")
 
-    vehicle_id = result["sequence_value"]
+    
 
     # Convert OpenCV frame to JPEG bytes
     success, buffer = cv2.imencode(".jpg", dicts["vehicleframe"])

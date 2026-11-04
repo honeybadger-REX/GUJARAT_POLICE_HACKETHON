@@ -85,7 +85,7 @@ async def main_pipeline(video_source,camera_id):
         # FILTER
         # --------------------------------
 
-        frame, camera_id , frame_id = filter_frame(frame)
+        frame , came_id , frame_id= filter_frame(frame)
 
 
         # --------------------------------
