@@ -1,5 +1,6 @@
 import os
 from mysql.connector import pooling
+import cv2
 
 
 db_pool = pooling.MySQLConnectionPool(
@@ -28,3 +29,19 @@ client = MongoClient(
 def get_mongo_db():
     mogodb =  client["CCTV_ai"]
     return mogodb
+
+def mongo_image(dicts:dict,frame:str,year,month,time,id:str):
+    success, buffer = cv2.imencode(".jpg", dicts["vehicleframe"])
+     
+    if not success:
+        raise ValueError("Could not encode frame")
+     
+         # Store image in GridFS
+    gridfs_id = fs.put(
+             buffer.tobytes(),
+             filename=f"{dicts["cam_id"]}_{id}_{year}_{month}_{time}.jpg",
+             cam_id=dicts["cam_id"],
+             vehicle_id= id
+         )
+    return gridfs_id
+     

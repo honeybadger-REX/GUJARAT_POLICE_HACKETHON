@@ -43,7 +43,7 @@ def detect_helmet(frame, camera_id, frame_id, confidence=0.40):
         helmet_frame = original_frame[y1:y2, x1:x2].copy()
 
         helmet = {
-            "detection_id": str(uuid.uuid4()),
+            "helmet_id": str(uuid.uuid4()),
             "camera_id": camera_id,
             "frame_id": frame_id,
             "class": class_name,

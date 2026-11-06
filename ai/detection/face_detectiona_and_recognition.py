@@ -4,9 +4,9 @@ from database.face import face_idg
 import face_recognition
 
 
-def detect_faces(frame,hemlet_id):
+def detect_faces(frame,frame_id):
     rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-
+    helemt_id = 8 
     locations = face_recognition.face_locations(rgb_frame)
     encodings = face_recognition.face_encodings(
         rgb_frame,
@@ -22,9 +22,10 @@ def detect_faces(frame,hemlet_id):
         top, right, bottom, left = location
 
         face = {
+            "frame_id": frame_id,
             "encoding": encoding,
             "bbox": [left, top, right, bottom],
-            "hemlet_id":hemlet_id ,
+            # "hemlet_id":hemlet_id ,
             "face_id":face_idg(),
             "face_frame" : original_frame[left:right, top:bottom]
 
