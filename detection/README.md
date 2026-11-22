@@ -47,11 +47,11 @@ Start detection for a camera already registered in MySQL:
 
 An empty enabled_classes list means all classes supported by the model. Stop with DELETE /api/detection/cameras/12/stop. Inspect GET /api/detection/health and GET /api/detection/cameras. Live events: ws://127.0.0.1:8000/api/detection/ws.
 
-If DETECTION_API_KEY is configured, send it in the X-Detection-Key HTTP header and the same header during the WebSocket handshake. Do not put secrets in URLs or commit them.
+If DETECTION_API_KEY is configured, HTTP requests must send X-Detection-Key. Native browser WebSocket APIs cannot set arbitrary headers, so the included static dashboard WebSocket client is intended for local development with the key unset. For a protected deployment, put the dashboard behind your authenticated reverse proxy and implement cookie/session authentication for the WebSocket before enabling this key. Do not put secrets in URLs or commit them.
 
 ## Existing database compatibility warning
 
-The current Python repositories and stream service query camera.CameraURL, but the committed database/init.sql defines camera_stream.SourceURL instead and does not define CameraURL. This integration follows the current Python repository convention. Before starting detection, reconcile the actual deployed database schema with the code. Do not run a destructive database reset on live camera data. The camera URL is deliberately not returned by the public camera-list endpoint.
+The committed database/init.sql stores source URLs in camera_stream.SourceURL. Detection first queries that normalized table and falls back to the legacy camera.CameraURL field used by older Python repositories. Confirm the deployed schema has either path and that camera_stream.enable is set for the selected stream. The rest of the older repository still contains CameraURL/CameraName assumptions that should be reconciled separately. Do not run a destructive database reset on live camera data. The camera URL is deliberately not returned by the public camera-list endpoint.
 
 The detection reader opens the registered RTSP URL directly and does not depend on browser WebRTC viewing. A camera vendor may limit concurrent RTSP sessions; for those devices, use a relay or shared decoded stream in a later optimization.
 
